@@ -4,6 +4,7 @@
 
 #include <Geom_Curve.hxx>
 #include <Geom_Surface.hxx>
+#include <Geom2d_Curve.hxx>
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Vertex.hxx>
@@ -55,6 +56,7 @@
 #include <BRepBuilderAPI_MakeSolid.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeShell.hxx>
+#include <BRepBuilderAPI_MakeEdge2d.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <BRepBuilderAPI_Copy.hxx>
 
@@ -137,6 +139,14 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("Shape", [](BRepBuilderAPI_MakeEdge& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Edge",  [](BRepBuilderAPI_MakeEdge& m) -> TopoDS_Edge  { return m.Edge(); });
 
+  mod.add_type<BRepBuilderAPI_MakeEdge2d>("BRepBuilderAPI_MakeEdge2d")
+     .constructor<const Handle(Geom2d_Curve)&>()
+     .constructor<const Handle(Geom2d_Curve)&, double, double>()
+     .constructor<const gp_Pnt2d&, const gp_Pnt2d&>();
+  mod.method("Shape", [](BRepBuilderAPI_MakeEdge2d& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Edge",  [](BRepBuilderAPI_MakeEdge2d& m) -> TopoDS_Edge  { return m.Edge(); });
+  mod.method("IsDone", [](const BRepBuilderAPI_MakeEdge2d& m) -> bool { return bool(m.IsDone()); });
+
   mod.add_type<BRepBuilderAPI_MakeWire>("BRepBuilderAPI_MakeWire").constructor<>()
      .constructor<const TopoDS_Edge&>()
      .constructor<const TopoDS_Wire&>();
@@ -177,6 +187,16 @@ void register_occ_builders(jlcxx::Module& mod) {
      .constructor<const TopoDS_Wire&, bool>();
   mod.method("Shape", [](BRepBuilderAPI_MakeFace& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Face",  [](BRepBuilderAPI_MakeFace& m) -> TopoDS_Face  { return m.Face(); });
+
+  mod.add_type<BRepBuilderAPI_MakeShell>("BRepBuilderAPI_MakeShell").constructor<>();
+  mod.method("Init", [](BRepBuilderAPI_MakeShell& m, const Handle(Geom_Surface)& s,
+                         double umin, double umax, double vmin, double vmax, bool seg) {
+    m.Init(s, umin, umax, vmin, vmax, seg);
+  });
+  mod.method("IsDone", [](const BRepBuilderAPI_MakeShell& m) -> bool { return bool(m.IsDone()); });
+  mod.method("Shape", [](BRepBuilderAPI_MakeShell& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Shell", [](BRepBuilderAPI_MakeShell& m) -> TopoDS_Shell { return m.Shell(); });
+  mod.method("Error", [](const BRepBuilderAPI_MakeShell& m) -> int { return int(m.Error()); });
 
   mod.add_type<BRepBuilderAPI_MakeSolid>("BRepBuilderAPI_MakeSolid").constructor<>()
      .constructor<const TopoDS_CompSolid&>()
@@ -231,14 +251,35 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.add_type<BRepAlgoAPI_Fuse>("BRepAlgoAPI_Fuse")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
   mod.method("Shape", [](BRepAlgoAPI_Fuse& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Modified", [](BRepAlgoAPI_Fuse& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepAlgoAPI_Fuse& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDone", [](const BRepAlgoAPI_Fuse& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<BRepAlgoAPI_Cut>("BRepAlgoAPI_Cut")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
   mod.method("Shape", [](BRepAlgoAPI_Cut& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Modified", [](BRepAlgoAPI_Cut& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepAlgoAPI_Cut& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDone", [](const BRepAlgoAPI_Cut& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<BRepAlgoAPI_Common>("BRepAlgoAPI_Common")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
   mod.method("Shape", [](BRepAlgoAPI_Common& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Modified", [](BRepAlgoAPI_Common& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepAlgoAPI_Common& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDone", [](const BRepAlgoAPI_Common& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<BRepAlgoAPI_Section>("BRepAlgoAPI_Section")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
