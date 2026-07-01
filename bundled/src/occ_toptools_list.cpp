@@ -5,6 +5,7 @@
 #include <jlcxx/jlcxx.hpp>
 
 #include <TopTools_ListOfShape.hxx>
+#include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopoDS_Shape.hxx>
 
 void register_occ_toptools_list(jlcxx::Module& mod) {
@@ -27,5 +28,15 @@ void register_occ_toptools_list(jlcxx::Module& mod) {
   });
   mod.method("Clear", [](TopTools_ListOfShape& l) {
     l.Clear();
+  });
+
+  mod.method("TopTools_ListValue", [](const TopTools_ListOfShape& l, int index) -> TopoDS_Shape {
+    if (index < 1) return TopoDS_Shape();
+    int i = 0;
+    for (TopTools_ListIteratorOfListOfShape it(l); it.More(); it.Next()) {
+      ++i;
+      if (i == index) return it.Value();
+    }
+    return TopoDS_Shape();
   });
 }
