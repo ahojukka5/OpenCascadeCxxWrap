@@ -4,9 +4,13 @@
 
 #include <BRepFeat_MakePrism.hxx>
 #include <BRepFeat_MakeRevol.hxx>
+#include <BRepFeat_MakeDPrism.hxx>
+#include <BRepFeat_SplitShape.hxx>
+#include <BRepFeat_Gluer.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Wire.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Ax1.hxx>
 
@@ -64,4 +68,30 @@ void register_occ_feat(jlcxx::Module& mod) {
   });
   mod.method("Shape",  [](BRepFeat_MakeRevol& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("IsDone", [](const BRepFeat_MakeRevol& m) -> bool { return bool(m.IsDone()); });
+
+  mod.add_type<BRepFeat_MakeDPrism>("BRepFeat_MakeDPrism")
+     .constructor<>()
+     .constructor<const TopoDS_Shape&, const TopoDS_Face&, const TopoDS_Face&,
+                  double, int, bool>();
+  mod.method("Perform", [](BRepFeat_MakeDPrism& m, double length) { m.Perform(length); });
+  mod.method("Shape",  [](BRepFeat_MakeDPrism& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("IsDone", [](const BRepFeat_MakeDPrism& m) -> bool { return bool(m.IsDone()); });
+
+  mod.add_type<BRepFeat_SplitShape>("BRepFeat_SplitShape")
+     .constructor<const TopoDS_Shape&>();
+  mod.method("Add", [](BRepFeat_SplitShape& m, const TopoDS_Wire& w, const TopoDS_Face& f) {
+    m.Add(w, f);
+  });
+  mod.method("Build",  [](BRepFeat_SplitShape& m) { m.Build(); });
+  mod.method("Shape",  [](BRepFeat_SplitShape& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("IsDone", [](const BRepFeat_SplitShape& m) -> bool { return bool(m.IsDone()); });
+
+  mod.add_type<BRepFeat_Gluer>("BRepFeat_Gluer")
+     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
+  mod.method("Bind",   [](BRepFeat_Gluer& m, const TopoDS_Face& f1, const TopoDS_Face& f2) {
+    m.Bind(f1, f2);
+  });
+  mod.method("Build",  [](BRepFeat_Gluer& m) { m.Build(); });
+  mod.method("Shape",  [](BRepFeat_Gluer& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("IsDone", [](const BRepFeat_Gluer& m) -> bool { return bool(m.IsDone()); });
 }
