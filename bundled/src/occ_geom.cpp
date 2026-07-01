@@ -13,6 +13,11 @@
 #include <Geom_Surface.hxx>
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BezierCurve.hxx>
+#include <Geom_Plane.hxx>
+#include <Geom_CylindricalSurface.hxx>
+#include <Geom_SphericalSurface.hxx>
+#include <Geom_ToroidalSurface.hxx>
+#include <Geom_BSplineSurface.hxx>
 #include <GeomAPI_PointsToBSpline.hxx>
 #include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
@@ -24,6 +29,11 @@
 
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
+#include <gp_Ax3.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Cylinder.hxx>
+#include <gp_Sphere.hxx>
+#include <gp_Torus.hxx>
 #include <GeomAbs_Shape.hxx>
 
 namespace {
@@ -119,6 +129,28 @@ void register_occ_geom(jlcxx::Module& mod) {
     return new Geom_BezierCurve(p, w);
   });
 
+  // ---- Analytic surface factories ----
+  mod.method("Geom_Plane", [](const gp_Ax3& ax) -> Handle(Geom_Surface) { return new Geom_Plane(ax); });
+  mod.method("Geom_Plane", [](const gp_Pln& pln) -> Handle(Geom_Surface) { return new Geom_Plane(pln); });
+  mod.method("Geom_CylindricalSurface", [](const gp_Ax3& ax, double r) -> Handle(Geom_Surface) {
+    return new Geom_CylindricalSurface(ax, r);
+  });
+  mod.method("Geom_CylindricalSurface", [](const gp_Cylinder& cyl) -> Handle(Geom_Surface) {
+    return new Geom_CylindricalSurface(cyl);
+  });
+  mod.method("Geom_SphericalSurface", [](const gp_Ax3& ax, double r) -> Handle(Geom_Surface) {
+    return new Geom_SphericalSurface(ax, r);
+  });
+  mod.method("Geom_SphericalSurface", [](const gp_Sphere& sph) -> Handle(Geom_Surface) {
+    return new Geom_SphericalSurface(sph);
+  });
+  mod.method("Geom_ToroidalSurface", [](const gp_Ax3& ax, double r1, double r2) -> Handle(Geom_Surface) {
+    return new Geom_ToroidalSurface(ax, r1, r2);
+  });
+  mod.method("Geom_ToroidalSurface", [](const gp_Torus& tor) -> Handle(Geom_Surface) {
+    return new Geom_ToroidalSurface(tor);
+  });
+
   // ---- Curve fitting ----
   mod.method("GeomAPI_PointsToBSpline", [](jlcxx::ArrayRef<double> points, int degMin, int degMax,
                                             int continuity, double tol3d) -> Handle(Geom_Curve) {
@@ -148,6 +180,10 @@ void register_occ_geom(jlcxx::Module& mod) {
   mod.method("NearestPoint", [](const GeomAPI_ProjectPointOnSurf& p) -> gp_Pnt { return p.NearestPoint(); });
   mod.method("LowerDistance", [](const GeomAPI_ProjectPointOnSurf& p) -> double { return p.LowerDistance(); });
   mod.method("IsDone", [](const GeomAPI_ProjectPointOnSurf& p) -> bool { return bool(p.IsDone()); });
+  mod.method("Parameters", [](const GeomAPI_ProjectPointOnSurf& p, int i, double& u, double& v) {
+    p.Parameters(i, u, v);
+    return std::make_tuple(u, v);
+  });
 
   // ---- Curve-curve extrema ----
   mod.add_type<GeomAPI_ExtremaCurveCurve>("GeomAPI_ExtremaCurveCurve")
