@@ -4,10 +4,15 @@
 #include <BRepOffsetAPI_ThruSections.hxx>
 #include <BRepOffsetAPI_MakeOffsetShape.hxx>
 #include <BRepOffsetAPI_MakeOffset.hxx>
+#include <BRepOffsetAPI_MakePipeShell.hxx>
+#include <BRepOffsetAPI_MakeEvolved.hxx>
+#include <BRepBuilderAPI_TransitionMode.hxx>
 #include <GeomAbs_JoinType.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Face.hxx>
+#include <TopoDS_Wire.hxx>
 #include <TopoDS_Shape.hxx>
 
 void register_occ_sweep(jlcxx::Module& mod)
@@ -27,6 +32,26 @@ void register_occ_sweep(jlcxx::Module& mod)
 
   mod.add_type<BRepOffsetAPI_MakeOffset>("BRepOffsetAPI_MakeOffset")
     .constructor<>();
+
+  mod.add_type<BRepOffsetAPI_MakePipeShell>("BRepOffsetAPI_MakePipeShell")
+    .constructor<const TopoDS_Wire&>();
+  mod.method("Add", [](BRepOffsetAPI_MakePipeShell& p, const TopoDS_Shape& s, bool withContact, bool withCorrection) {
+    p.Add(s, withContact, withCorrection);
+  });
+  mod.method("Build", [](BRepOffsetAPI_MakePipeShell& p) { p.Build(); });
+  mod.method("IsDone", [](const BRepOffsetAPI_MakePipeShell& p) -> bool { return bool(p.IsDone()); });
+  mod.method("Shape", [](BRepOffsetAPI_MakePipeShell& p) -> TopoDS_Shape { return p.Shape(); });
+  mod.method("SetMode", [](BRepOffsetAPI_MakePipeShell& p, bool isFrenet) { p.SetMode(isFrenet); });
+  mod.method("SetTransitionMode", [](BRepOffsetAPI_MakePipeShell& p, int mode) {
+    p.SetTransitionMode(BRepBuilderAPI_TransitionMode(mode));
+  });
+
+  mod.add_type<BRepOffsetAPI_MakeEvolved>("BRepOffsetAPI_MakeEvolved")
+    .constructor<>()
+    .constructor<const TopoDS_Shape&, const TopoDS_Wire&>();
+  mod.method("Build", [](BRepOffsetAPI_MakeEvolved& e) { e.Build(); });
+  mod.method("IsDone", [](const BRepOffsetAPI_MakeEvolved& e) -> bool { return bool(e.IsDone()); });
+  mod.method("Shape", [](BRepOffsetAPI_MakeEvolved& e) -> TopoDS_Shape { return e.Shape(); });
 
   // --- BRepOffsetAPI_MakePipe methods ---
 
@@ -114,4 +139,8 @@ void register_occ_sweep(jlcxx::Module& mod)
   mod.method("GeomAbs_Arc",          []() { return int(GeomAbs_Arc); });
   mod.method("GeomAbs_Tangent",      []() { return int(GeomAbs_Tangent); });
   mod.method("GeomAbs_Intersection", []() { return int(GeomAbs_Intersection); });
+
+  mod.method("BRepBuilderAPI_Transformed",  []() { return int(BRepBuilderAPI_Transformed); });
+  mod.method("BRepBuilderAPI_RightCorner",  []() { return int(BRepBuilderAPI_RightCorner); });
+  mod.method("BRepBuilderAPI_RoundCorner",  []() { return int(BRepBuilderAPI_RoundCorner); });
 }
