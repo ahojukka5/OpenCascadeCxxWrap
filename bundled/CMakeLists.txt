@@ -33,10 +33,13 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_shapeupgrade.cpp
   src/occ_toptools_list.cpp
   src/occ_geom.cpp
+  src/occ_geom2d.cpp
   src/occ_feat.cpp
   src/occ_thicksolid.cpp
   src/occ_draft.cpp
   src/occ_breplib.cpp
+  src/occ_advanced.cpp
+  src/occ_xcaf.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 

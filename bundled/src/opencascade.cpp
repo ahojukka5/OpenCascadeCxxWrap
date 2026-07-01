@@ -27,6 +27,9 @@ void register_occ_shapeupgrade(jlcxx::Module&);
 void register_occ_feat(jlcxx::Module&);
 void register_occ_thicksolid(jlcxx::Module&);
 void register_occ_draft(jlcxx::Module&);
+void register_occ_geom2d(jlcxx::Module&);
+void register_occ_advanced(jlcxx::Module&);
+void register_occ_xcaf(jlcxx::Module&);
 void register_occ_breplib(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
@@ -35,6 +38,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_topology(mod);
   register_occ_toptools_list(mod);
   register_occ_geom(mod);
+  register_occ_geom2d(mod);
   register_occ_builders(mod);
   register_occ_io(mod);
   register_occ_props(mod);
@@ -57,4 +61,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_thicksolid(mod);
   register_occ_draft(mod);
   register_occ_breplib(mod);
+  register_occ_advanced(mod);
+  register_occ_xcaf(mod);
 }
