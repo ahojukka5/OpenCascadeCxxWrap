@@ -27,6 +27,12 @@ void register_occ_thicksolid(jlcxx::Module& mod) {
   mod.method("Modified", [](BRepOffsetAPI_MakeThickSolid& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Modified(s);
   });
+  mod.method("Generated", [](BRepOffsetAPI_MakeThickSolid& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_MakeThickSolid& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
   mod.method("Build", [](BRepOffsetAPI_MakeThickSolid& m) { m.Build(); });
   mod.method("Shape", [](BRepOffsetAPI_MakeThickSolid& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("IsDone", [](const BRepOffsetAPI_MakeThickSolid& m) -> bool { return bool(m.IsDone()); });
