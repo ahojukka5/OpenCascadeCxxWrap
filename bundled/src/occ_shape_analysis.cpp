@@ -4,10 +4,12 @@
 #include <ShapeAnalysis_FreeBounds.hxx>
 #include <ShapeAnalysis_Shell.hxx>
 #include <ShapeAnalysis_Edge.hxx>
+#include <ShapeAnalysis_Wire.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Wire.hxx>
 #include <TopoDS_Vertex.hxx>
 
 void register_occ_shape_analysis(jlcxx::Module& mod) {
@@ -23,6 +25,15 @@ void register_occ_shape_analysis(jlcxx::Module& mod) {
 
   mod.add_type<ShapeAnalysis_Edge>("ShapeAnalysis_Edge")
      .constructor<>();
+
+  // Scoped subset of ShapeAnalysis_Wire's much larger API (dozens of
+  // individual Check* methods plus a generic ShapeExtend_Status bitmask
+  // query system shared across the whole Shape Healing module): the
+  // checks most useful for diagnosing why a wire is failing to become a
+  // valid face, plus Perform() to run all of them at once.
+  mod.add_type<ShapeAnalysis_Wire>("ShapeAnalysis_Wire")
+     .constructor<>()
+     .constructor<const TopoDS_Wire&, const TopoDS_Face&, double>();
 
   // ---- ShapeAnalysis_FreeBounds methods ----
 
@@ -77,4 +88,33 @@ void register_occ_shape_analysis(jlcxx::Module& mod) {
   mod.method("LastVertex", [](const ShapeAnalysis_Edge& sae, const TopoDS_Edge& e) -> TopoDS_Vertex {
     return sae.LastVertex(e);
   });
+
+  // ---- ShapeAnalysis_Wire methods ----
+  // Every Check* method below returns True when a PROBLEM is found (matches
+  // the doc comment on each, and the convention used throughout the Shape
+  // Healing module -- e.g. CheckSelfIntersection: "Returns: True if at
+  // least one check returned True", not "check passed").
+
+  mod.method("Load", [](ShapeAnalysis_Wire& w, const TopoDS_Wire& wire) { w.Load(wire); });
+  mod.method("SetFace", [](ShapeAnalysis_Wire& w, const TopoDS_Face& f) { w.SetFace(f); });
+  mod.method("SetPrecision", [](ShapeAnalysis_Wire& w, double prec) { w.SetPrecision(prec); });
+  mod.method("IsLoaded", [](const ShapeAnalysis_Wire& w) -> bool { return bool(w.IsLoaded()); });
+  mod.method("ClearStatuses", [](ShapeAnalysis_Wire& w) { w.ClearStatuses(); });
+  mod.method("Perform", [](ShapeAnalysis_Wire& w) -> bool { return bool(w.Perform()); });
+  mod.method("CheckOrder", [](ShapeAnalysis_Wire& w, bool isClosed, bool mode3d) -> bool {
+    return bool(w.CheckOrder(isClosed, mode3d));
+  });
+  mod.method("CheckConnected", [](ShapeAnalysis_Wire& w, double prec) -> bool {
+    return bool(w.CheckConnected(prec));
+  });
+  mod.method("CheckSmall", [](ShapeAnalysis_Wire& w, double precsmall) -> bool {
+    return bool(w.CheckSmall(precsmall));
+  });
+  mod.method("CheckClosed", [](ShapeAnalysis_Wire& w, double prec) -> bool {
+    return bool(w.CheckClosed(prec));
+  });
+  mod.method("CheckSelfIntersection", [](ShapeAnalysis_Wire& w) -> bool {
+    return bool(w.CheckSelfIntersection());
+  });
+  mod.method("CheckGaps3d", [](ShapeAnalysis_Wire& w) -> bool { return bool(w.CheckGaps3d()); });
 }
