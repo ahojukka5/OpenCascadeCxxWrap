@@ -281,8 +281,18 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("Solid", [](BRepPrimAPI_MakeWedge& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   // ===== BRepAlgoAPI: booleans ==============================================
+  // Default constructor + SetArguments/SetTools/SetFuzzyValue/Build (below)
+  // is the path used when a caller wants fuzzy-tolerance control -- the
+  // eager 2-shape constructor computes the result immediately, too early
+  // for SetFuzzyValue to have any effect. SetFuzzyValue itself comes from
+  // BOPAlgo_Options via `protected` inheritance, re-exposed public through
+  // BRepAlgoAPI_Algo's `using BOPAlgo_Options::SetFuzzyValue;` -- confirmed
+  // callable directly on Fuse/Cut/Common the same way SetRunParallel
+  // already works on BRepAlgoAPI_Check (occ_mesh.cpp) via the identical
+  // using-declaration pattern.
   mod.add_type<BRepAlgoAPI_Fuse>("BRepAlgoAPI_Fuse")
-     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
+     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>()
+     .constructor<>();
   mod.method("Shape", [](BRepAlgoAPI_Fuse& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Modified", [](BRepAlgoAPI_Fuse& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Modified(s);
@@ -294,9 +304,14 @@ void register_occ_builders(jlcxx::Module& mod) {
     return bool(m.IsDeleted(s));
   });
   mod.method("IsDone", [](const BRepAlgoAPI_Fuse& m) -> bool { return bool(m.IsDone()); });
+  mod.method("SetArguments", [](BRepAlgoAPI_Fuse& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
+  mod.method("SetTools",     [](BRepAlgoAPI_Fuse& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
+  mod.method("SetFuzzyValue",[](BRepAlgoAPI_Fuse& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("Build",        [](BRepAlgoAPI_Fuse& m) { m.Build(); });
 
   mod.add_type<BRepAlgoAPI_Cut>("BRepAlgoAPI_Cut")
-     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
+     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>()
+     .constructor<>();
   mod.method("Shape", [](BRepAlgoAPI_Cut& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Modified", [](BRepAlgoAPI_Cut& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Modified(s);
@@ -308,9 +323,14 @@ void register_occ_builders(jlcxx::Module& mod) {
     return bool(m.IsDeleted(s));
   });
   mod.method("IsDone", [](const BRepAlgoAPI_Cut& m) -> bool { return bool(m.IsDone()); });
+  mod.method("SetArguments", [](BRepAlgoAPI_Cut& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
+  mod.method("SetTools",     [](BRepAlgoAPI_Cut& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
+  mod.method("SetFuzzyValue",[](BRepAlgoAPI_Cut& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("Build",        [](BRepAlgoAPI_Cut& m) { m.Build(); });
 
   mod.add_type<BRepAlgoAPI_Common>("BRepAlgoAPI_Common")
-     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
+     .constructor<const TopoDS_Shape&, const TopoDS_Shape&>()
+     .constructor<>();
   mod.method("Shape", [](BRepAlgoAPI_Common& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Modified", [](BRepAlgoAPI_Common& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Modified(s);
@@ -322,6 +342,10 @@ void register_occ_builders(jlcxx::Module& mod) {
     return bool(m.IsDeleted(s));
   });
   mod.method("IsDone", [](const BRepAlgoAPI_Common& m) -> bool { return bool(m.IsDone()); });
+  mod.method("SetArguments", [](BRepAlgoAPI_Common& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
+  mod.method("SetTools",     [](BRepAlgoAPI_Common& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
+  mod.method("SetFuzzyValue",[](BRepAlgoAPI_Common& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("Build",        [](BRepAlgoAPI_Common& m) { m.Build(); });
 
   mod.add_type<BRepAlgoAPI_Section>("BRepAlgoAPI_Section")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();

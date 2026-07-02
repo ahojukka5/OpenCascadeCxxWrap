@@ -17,6 +17,7 @@ void register_occ_advanced(jlcxx::Module& mod) {
   mod.method("SetTools", [](BRepAlgoAPI_Splitter& s, const TopTools_ListOfShape& tools) {
     s.SetTools(tools);
   });
+  mod.method("SetFuzzyValue", [](BRepAlgoAPI_Splitter& s, double v) { s.SetFuzzyValue(v); });
   mod.method("Build",       [](BRepAlgoAPI_Splitter& s) { s.Build(); });
   mod.method("Shape",       [](BRepAlgoAPI_Splitter& s) -> TopoDS_Shape { return s.Shape(); });
   mod.method("IsDone",      [](const BRepAlgoAPI_Splitter& s) -> bool { return bool(s.IsDone()); });
