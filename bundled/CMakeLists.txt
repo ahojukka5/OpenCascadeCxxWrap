@@ -47,6 +47,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_gltf.cpp
   src/occ_fill.cpp
   src/occ_hlr.cpp
+  src/occ_geomfill.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
