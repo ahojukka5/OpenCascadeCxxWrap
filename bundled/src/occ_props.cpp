@@ -1,6 +1,7 @@
 // occ_props.cpp — 1:1 CxxWrap bindings for OCC mass/geometry properties,
 // bounding-box utilities, and BRep_Tool::Pnt for vertex point extraction.
 #include <jlcxx/jlcxx.hpp>
+#include "occ_exception.hpp"
 
 #include <GProp_GProps.hxx>
 #include <GProp_PrincipalProps.hxx>
@@ -130,13 +131,13 @@ void register_occ_props(jlcxx::Module& mod) {
   // ---- BRepGProp free functions ----
 
   mod.method("BRepGProp_LinearProperties",  [](const TopoDS_Shape& s, GProp_GProps& g) {
-    BRepGProp::LinearProperties(s, g);
+    occ_guard([&]{ BRepGProp::LinearProperties(s, g); return 0; });
   });
   mod.method("BRepGProp_SurfaceProperties", [](const TopoDS_Shape& s, GProp_GProps& g) {
-    BRepGProp::SurfaceProperties(s, g);
+    occ_guard([&]{ BRepGProp::SurfaceProperties(s, g); return 0; });
   });
   mod.method("BRepGProp_VolumeProperties",  [](const TopoDS_Shape& s, GProp_GProps& g) {
-    BRepGProp::VolumeProperties(s, g);
+    occ_guard([&]{ BRepGProp::VolumeProperties(s, g); return 0; });
   });
 
   // ---- BRepBndLib free function ----
