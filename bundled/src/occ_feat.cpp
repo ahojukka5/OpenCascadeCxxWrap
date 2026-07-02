@@ -11,6 +11,7 @@
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Wire.hxx>
+#include <TopTools_ListOfShape.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Ax1.hxx>
 
@@ -48,6 +49,15 @@ void register_occ_feat(jlcxx::Module& mod) {
   });
   mod.method("Shape",  [](BRepFeat_MakePrism& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("IsDone", [](const BRepFeat_MakePrism& m) -> bool { return bool(m.IsDone()); });
+  mod.method("Modified", [](BRepFeat_MakePrism& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepFeat_MakePrism& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepFeat_MakePrism& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 
   // ---- BRepFeat_MakeRevol ----
   mod.method("Init", [](BRepFeat_MakeRevol& m, const TopoDS_Shape& sbase, const TopoDS_Shape& pbase,
@@ -68,6 +78,15 @@ void register_occ_feat(jlcxx::Module& mod) {
   });
   mod.method("Shape",  [](BRepFeat_MakeRevol& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("IsDone", [](const BRepFeat_MakeRevol& m) -> bool { return bool(m.IsDone()); });
+  mod.method("Modified", [](BRepFeat_MakeRevol& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepFeat_MakeRevol& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepFeat_MakeRevol& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 
   mod.add_type<BRepFeat_MakeDPrism>("BRepFeat_MakeDPrism")
      .constructor<>()
