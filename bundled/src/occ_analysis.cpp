@@ -1,6 +1,7 @@
 // occ_analysis.cpp — 1:1 CxxWrap bindings for BRepCheck_Analyzer, ShapeFix_Shape,
 // and BRep_Tool free functions.
 #include "occ_handle_traits.hpp"
+#include "occ_exception.hpp"
 #include <jlcxx/jlcxx.hpp>
 
 #include <BRepCheck_Analyzer.hxx>
@@ -18,12 +19,19 @@ void register_occ_analysis(jlcxx::Module& mod)
 {
     // ------------------------------------------------------------------ types
     mod.add_type<BRepCheck_Analyzer>("BRepCheck_Analyzer")
-        .constructor<const TopoDS_Shape&>()
-        .constructor<const TopoDS_Shape&, bool>();   // bool = GeomControls
+        .constructor([](const TopoDS_Shape& s) -> BRepCheck_Analyzer* {
+          return occ_guard([&]{ return new BRepCheck_Analyzer(s); });
+        })
+        .constructor([](const TopoDS_Shape& s, bool geomControls) -> BRepCheck_Analyzer* {
+          return occ_guard([&]{ return new BRepCheck_Analyzer(s, geomControls); });
+        });
 
     mod.add_type<ShapeFix_Shape>("ShapeFix_Shape")
         .constructor<>()
         .constructor<const TopoDS_Shape&>();
+    // ShapeFix_Shape's Context()/History() (-> BRepTools_History) are bound in
+    // occ_history.cpp, which is registered after both this file (ShapeFix_Shape
+    // must already be add_type'd) and BRepTools_History's own add_type.
 
     // --------------------------------------------------------------- methods
 
