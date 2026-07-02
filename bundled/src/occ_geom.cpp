@@ -180,7 +180,8 @@ void register_occ_geom(jlcxx::Module& mod) {
   mod.method("NearestPoint", [](const GeomAPI_ProjectPointOnSurf& p) -> gp_Pnt { return p.NearestPoint(); });
   mod.method("LowerDistance", [](const GeomAPI_ProjectPointOnSurf& p) -> double { return p.LowerDistance(); });
   mod.method("IsDone", [](const GeomAPI_ProjectPointOnSurf& p) -> bool { return bool(p.IsDone()); });
-  mod.method("Parameters", [](const GeomAPI_ProjectPointOnSurf& p, int i, double& u, double& v) {
+  mod.method("Parameters", [](const GeomAPI_ProjectPointOnSurf& p, int i) {
+    double u = 0.0, v = 0.0;
     p.Parameters(i, u, v);
     return std::make_tuple(u, v);
   });
