@@ -44,6 +44,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_bopalgo_analyzer.cpp
   src/occ_triangulation.cpp
   src/occ_interface_static.cpp
+  src/occ_gltf.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
