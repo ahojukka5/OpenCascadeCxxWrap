@@ -15,6 +15,7 @@
 #include <STEPControl_Writer.hxx>
 #include <IGESControl_Reader.hxx>
 #include <IGESControl_Writer.hxx>
+#include <TColStd_SequenceOfAsciiString.hxx>
 
 void register_occ_io(jlcxx::Module& mod) {
   mod.method("BRepTools_Write", [](const TopoDS_Shape& s, const std::string& f) {
@@ -51,6 +52,17 @@ void register_occ_io(jlcxx::Module& mod) {
   mod.method("TransferRoots", [](STEPControl_Reader& r) { return r.TransferRoots(); });
   mod.method("NbShapes",      [](STEPControl_Reader& r) { return r.NbShapes(); });
   mod.method("OneShape",      [](STEPControl_Reader& r) -> TopoDS_Shape { return r.OneShape(); });
+  mod.method("SetSystemLengthUnit", [](STEPControl_Reader& r, double u) { r.SetSystemLengthUnit(u); });
+  mod.method("SystemLengthUnit",    [](const STEPControl_Reader& r) -> double { return r.SystemLengthUnit(); });
+  // Introspection only: what length unit does the file itself declare?
+  // (OCCT's own transfer already converts correctly to the system unit --
+  // confirmed empirically -- this is for a caller who wants to know/display
+  // the file's declared unit, not to fix a conversion bug.)
+  mod.method("StepFileLengthUnit", [](STEPControl_Reader& r) -> std::string {
+    TColStd_SequenceOfAsciiString lengthUnits, angleUnits, solidAngleUnits;
+    r.FileUnits(lengthUnits, angleUnits, solidAngleUnits);
+    return lengthUnits.Length() >= 1 ? std::string(lengthUnits.Value(1).ToCString()) : std::string();
+  });
 
   mod.add_type<STEPControl_Writer>("STEPControl_Writer").constructor<>();
   mod.method("Transfer", [](STEPControl_Writer& w, const TopoDS_Shape& s, int mode) {
