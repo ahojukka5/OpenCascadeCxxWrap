@@ -5,6 +5,7 @@
 #include <TopoDS_Face.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepFilletAPI_MakeChamfer.hxx>
+#include <TopTools_ListOfShape.hxx>
 
 void register_occ_fillet(jlcxx::Module& mod) {
   mod.add_type<BRepFilletAPI_MakeFillet>("BRepFilletAPI_MakeFillet")
@@ -44,6 +45,15 @@ void register_occ_fillet(jlcxx::Module& mod) {
   mod.method("IsDone",     [](const BRepFilletAPI_MakeFillet& m) { return bool(m.IsDone()); });
   mod.method("Shape",      [](BRepFilletAPI_MakeFillet& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("NbContours", [](const BRepFilletAPI_MakeFillet& m) { return m.NbContours(); });
+  mod.method("Modified",   [](BRepFilletAPI_MakeFillet& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated",  [](BRepFilletAPI_MakeFillet& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted",  [](BRepFilletAPI_MakeFillet& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 
   mod.method("Add",    [](BRepFilletAPI_MakeChamfer& m, double d, const TopoDS_Edge& e) { m.Add(d, e); });
   mod.method("Add",    [](BRepFilletAPI_MakeChamfer& m, double dis1, double dis2,
@@ -65,4 +75,13 @@ void register_occ_fillet(jlcxx::Module& mod) {
   mod.method("Build",  [](BRepFilletAPI_MakeChamfer& m) { m.Build(); });
   mod.method("IsDone", [](const BRepFilletAPI_MakeChamfer& m) { return bool(m.IsDone()); });
   mod.method("Shape",  [](BRepFilletAPI_MakeChamfer& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Modified", [](BRepFilletAPI_MakeChamfer& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepFilletAPI_MakeChamfer& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepFilletAPI_MakeChamfer& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 }
