@@ -5,6 +5,7 @@
 #include <TopoDS_Face.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepFilletAPI_MakeChamfer.hxx>
+#include <ChFiDS_ErrorStatus.hxx>
 #include <TopTools_ListOfShape.hxx>
 
 void register_occ_fillet(jlcxx::Module& mod) {
@@ -65,6 +66,28 @@ void register_occ_fillet(jlcxx::Module& mod) {
   mod.method("IsDeleted",  [](BRepFilletAPI_MakeFillet& m, const TopoDS_Shape& s) -> bool {
     return bool(m.IsDeleted(s));
   });
+
+  // Fillet failure diagnosis (ChFi3d_Builder's own status API -- BRepFilletAPI_
+  // MakeChamfer does NOT inherit/expose this, confirmed against its header;
+  // chamfer failures stay on the existing IsDone()-only path).
+  mod.method("NbFaultyContours", [](const BRepFilletAPI_MakeFillet& m) -> int { return m.NbFaultyContours(); });
+  mod.method("FaultyContour",    [](const BRepFilletAPI_MakeFillet& m, int i) -> int { return m.FaultyContour(i); });
+  mod.method("NbFaultyVertices", [](const BRepFilletAPI_MakeFillet& m) -> int { return m.NbFaultyVertices(); });
+  mod.method("FaultyVertex",     [](const BRepFilletAPI_MakeFillet& m, int iv) -> TopoDS_Vertex {
+    return m.FaultyVertex(iv);
+  });
+  mod.method("HasResult", [](const BRepFilletAPI_MakeFillet& m) -> bool { return bool(m.HasResult()); });
+  mod.method("BadShape",  [](const BRepFilletAPI_MakeFillet& m) -> TopoDS_Shape { return m.BadShape(); });
+  mod.method("StripeStatus", [](const BRepFilletAPI_MakeFillet& m, int ic) -> int {
+    return int(m.StripeStatus(ic));
+  });
+  mod.method("NbEdges", [](const BRepFilletAPI_MakeFillet& m, int ic) -> int { return m.NbEdges(ic); });
+
+  mod.method("ChFiDS_Ok",              []() -> int { return int(ChFiDS_Ok); });
+  mod.method("ChFiDS_Error",           []() -> int { return int(ChFiDS_Error); });
+  mod.method("ChFiDS_WalkingFailure",  []() -> int { return int(ChFiDS_WalkingFailure); });
+  mod.method("ChFiDS_StartsolFailure", []() -> int { return int(ChFiDS_StartsolFailure); });
+  mod.method("ChFiDS_TwistedSurface",  []() -> int { return int(ChFiDS_TwistedSurface); });
 
   mod.method("Add",    [](BRepFilletAPI_MakeChamfer& m, double d, const TopoDS_Edge& e) { m.Add(d, e); });
   mod.method("Add",    [](BRepFilletAPI_MakeChamfer& m, double dis1, double dis2,
