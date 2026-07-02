@@ -1,5 +1,6 @@
 // occ_builders.cpp — 1:1 CxxWrap bindings for BRepPrimAPI, BRepBuilderAPI, BRepAlgoAPI.
 #include "occ_handle_traits.hpp"
+#include "occ_exception.hpp"
 #include <jlcxx/jlcxx.hpp>
 
 #include <Geom_Curve.hxx>
@@ -68,46 +69,74 @@
 void register_occ_builders(jlcxx::Module& mod) {
   // ===== BRepPrimAPI: primitive solids ======================================
   mod.add_type<BRepPrimAPI_MakeBox>("BRepPrimAPI_MakeBox")
-     .constructor<double, double, double>()
-     .constructor<const gp_Pnt&, double, double, double>()
-     .constructor<const gp_Pnt&, const gp_Pnt&>();
-  mod.method("Shape", [](BRepPrimAPI_MakeBox& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeBox& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double dx, double dy, double dz) -> BRepPrimAPI_MakeBox* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeBox(dx, dy, dz); });
+     })
+     .constructor([](const gp_Pnt& p, double dx, double dy, double dz) -> BRepPrimAPI_MakeBox* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeBox(p, dx, dy, dz); });
+     })
+     .constructor([](const gp_Pnt& p1, const gp_Pnt& p2) -> BRepPrimAPI_MakeBox* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeBox(p1, p2); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeBox& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeBox& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakeCylinder>("BRepPrimAPI_MakeCylinder")
-     .constructor<double, double>()
-     .constructor<double, double, double>()
-     .constructor<const gp_Ax2&, double, double>()
-     .constructor<const gp_Ax2&, double, double, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeCylinder& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeCylinder& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double r, double h) -> BRepPrimAPI_MakeCylinder* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCylinder(r, h); });
+     })
+     .constructor([](double r, double h, double angle) -> BRepPrimAPI_MakeCylinder* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCylinder(r, h, angle); });
+     })
+     .constructor([](const gp_Ax2& ax, double r, double h) -> BRepPrimAPI_MakeCylinder* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCylinder(ax, r, h); });
+     })
+     .constructor([](const gp_Ax2& ax, double r, double h, double angle) -> BRepPrimAPI_MakeCylinder* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCylinder(ax, r, h, angle); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeCylinder& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeCylinder& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakeSphere>("BRepPrimAPI_MakeSphere")
-     .constructor<double>()
-     .constructor<const gp_Pnt&, double>()
-     .constructor<const gp_Ax2&, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeSphere& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeSphere& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double r) -> BRepPrimAPI_MakeSphere* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeSphere(r); });
+     })
+     .constructor([](const gp_Pnt& c, double r) -> BRepPrimAPI_MakeSphere* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeSphere(c, r); });
+     })
+     .constructor([](const gp_Ax2& ax, double r) -> BRepPrimAPI_MakeSphere* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeSphere(ax, r); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeSphere& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeSphere& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakeCone>("BRepPrimAPI_MakeCone")
-     .constructor<double, double, double>()
-     .constructor<const gp_Ax2&, double, double, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeCone& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeCone& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double r1, double r2, double h) -> BRepPrimAPI_MakeCone* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCone(r1, r2, h); });
+     })
+     .constructor([](const gp_Ax2& ax, double r1, double r2, double h) -> BRepPrimAPI_MakeCone* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeCone(ax, r1, r2, h); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeCone& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeCone& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakeTorus>("BRepPrimAPI_MakeTorus")
-     .constructor<double, double>()
-     .constructor<const gp_Ax2&, double, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeTorus& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeTorus& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double r1, double r2) -> BRepPrimAPI_MakeTorus* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeTorus(r1, r2); });
+     })
+     .constructor([](const gp_Ax2& ax, double r1, double r2) -> BRepPrimAPI_MakeTorus* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeTorus(ax, r1, r2); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeTorus& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeTorus& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakePrism>("BRepPrimAPI_MakePrism")
      .constructor<const TopoDS_Shape&, const gp_Vec&>();
-  mod.method("Shape", [](BRepPrimAPI_MakePrism& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Shape", [](BRepPrimAPI_MakePrism& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
 
   mod.add_type<BRepPrimAPI_MakeRevol>("BRepPrimAPI_MakeRevol")
      .constructor<const TopoDS_Shape&, const gp_Ax1&, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeRevol& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Shape", [](BRepPrimAPI_MakeRevol& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
 
   // ===== BRepBuilderAPI: builders ===========================================
   mod.add_type<BRepBuilderAPI_MakeVertex>("BRepBuilderAPI_MakeVertex")
@@ -238,14 +267,18 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.add_type<BRepPrimAPI_MakeHalfSpace>("BRepPrimAPI_MakeHalfSpace")
      .constructor<const TopoDS_Face&, const gp_Pnt&>()
      .constructor<const TopoDS_Shell&, const gp_Pnt&>();
-  mod.method("Shape", [](BRepPrimAPI_MakeHalfSpace& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeHalfSpace& m) -> TopoDS_Solid { return m.Solid(); });
+  mod.method("Shape", [](BRepPrimAPI_MakeHalfSpace& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeHalfSpace& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   mod.add_type<BRepPrimAPI_MakeWedge>("BRepPrimAPI_MakeWedge")
-     .constructor<double, double, double, double>()
-     .constructor<const gp_Ax2&, double, double, double, double>();
-  mod.method("Shape", [](BRepPrimAPI_MakeWedge& m) -> TopoDS_Shape { return m.Shape(); });
-  mod.method("Solid", [](BRepPrimAPI_MakeWedge& m) -> TopoDS_Solid { return m.Solid(); });
+     .constructor([](double dx, double dy, double dz, double ltx) -> BRepPrimAPI_MakeWedge* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeWedge(dx, dy, dz, ltx); });
+     })
+     .constructor([](const gp_Ax2& ax, double dx, double dy, double dz, double ltx) -> BRepPrimAPI_MakeWedge* {
+       return occ_guard([&]{ return new BRepPrimAPI_MakeWedge(ax, dx, dy, dz, ltx); });
+     });
+  mod.method("Shape", [](BRepPrimAPI_MakeWedge& m) -> TopoDS_Shape { return occ_guard([&]{ return m.Shape(); }); });
+  mod.method("Solid", [](BRepPrimAPI_MakeWedge& m) -> TopoDS_Solid { return occ_guard([&]{ return m.Solid(); }); });
 
   // ===== BRepAlgoAPI: booleans ==============================================
   mod.add_type<BRepAlgoAPI_Fuse>("BRepAlgoAPI_Fuse")
@@ -256,6 +289,9 @@ void register_occ_builders(jlcxx::Module& mod) {
   });
   mod.method("Generated", [](BRepAlgoAPI_Fuse& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepAlgoAPI_Fuse& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
   });
   mod.method("IsDone", [](const BRepAlgoAPI_Fuse& m) -> bool { return bool(m.IsDone()); });
 
@@ -268,6 +304,9 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("Generated", [](BRepAlgoAPI_Cut& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Generated(s);
   });
+  mod.method("IsDeleted", [](BRepAlgoAPI_Cut& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
   mod.method("IsDone", [](const BRepAlgoAPI_Cut& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<BRepAlgoAPI_Common>("BRepAlgoAPI_Common")
@@ -278,6 +317,9 @@ void register_occ_builders(jlcxx::Module& mod) {
   });
   mod.method("Generated", [](BRepAlgoAPI_Common& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
     return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepAlgoAPI_Common& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
   });
   mod.method("IsDone", [](const BRepAlgoAPI_Common& m) -> bool { return bool(m.IsDone()); });
 
