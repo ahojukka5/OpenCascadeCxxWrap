@@ -40,6 +40,8 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_breplib.cpp
   src/occ_advanced.cpp
   src/occ_xcaf.cpp
+  src/occ_history.cpp
+  src/occ_bopalgo_analyzer.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
