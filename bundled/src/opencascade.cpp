@@ -40,6 +40,7 @@ void register_occ_fill(jlcxx::Module&);
 void register_occ_hlr(jlcxx::Module&);
 void register_occ_geomfill(jlcxx::Module&);
 void register_occ_robj(jlcxx::Module&);
+void register_occ_normalproj(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
@@ -81,4 +82,5 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_hlr(mod);
   register_occ_geomfill(mod);
   register_occ_robj(mod);
+  register_occ_normalproj(mod);
 }
