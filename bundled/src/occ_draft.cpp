@@ -4,6 +4,7 @@
 #include <BRepOffsetAPI_DraftAngle.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopTools_ListOfShape.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
 
@@ -21,4 +22,13 @@ void register_occ_draft(jlcxx::Module& mod) {
   mod.method("AddDone", [](const BRepOffsetAPI_DraftAngle& m) -> bool { return bool(m.AddDone()); });
   mod.method("Build", [](BRepOffsetAPI_DraftAngle& m) { m.Build(); });
   mod.method("Shape", [](BRepOffsetAPI_DraftAngle& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Modified", [](BRepOffsetAPI_DraftAngle& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_DraftAngle& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_DraftAngle& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 }
