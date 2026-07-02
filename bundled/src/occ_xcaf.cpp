@@ -84,6 +84,36 @@ void register_occ_xcaf(jlcxx::Module& mod) {
     return label;
   });
 
+  mod.method("XCAFDoc_ShapeTool_AddSubShape", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                                  const TDF_Label& parent,
+                                                  const TopoDS_Shape& sub) -> TDF_Label {
+    return tool->AddSubShape(parent, sub);
+  });
+
+  mod.method("XCAFDoc_ShapeTool_FindSubShape", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                                   const TDF_Label& parent,
+                                                   const TopoDS_Shape& sub) -> TDF_Label {
+    TDF_Label label;
+    tool->FindSubShape(parent, sub, label);
+    return label;
+  });
+
+  mod.method("XCAFDoc_SubShapeCount", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                          const TDF_Label& parent) -> int {
+    TDF_LabelSequence labels;
+    tool->GetSubShapes(parent, labels);
+    return int(labels.Length());
+  });
+
+  mod.method("XCAFDoc_SubShapeLabel", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                          const TDF_Label& parent,
+                                          int index) -> TDF_Label {
+    TDF_LabelSequence labels;
+    tool->GetSubShapes(parent, labels);
+    if (index < 1 || index > labels.Length()) return TDF_Label();
+    return labels.Value(index);
+  });
+
   mod.method("XCAFDoc_ComponentCount", [](Handle(XCAFDoc_ShapeTool)& tool,
                                            const TDF_Label& label) -> int {
     TDF_LabelSequence components;
