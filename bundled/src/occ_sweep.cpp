@@ -33,7 +33,14 @@ void register_occ_sweep(jlcxx::Module& mod)
     .constructor<>();
 
   mod.add_type<BRepOffsetAPI_MakeOffset>("BRepOffsetAPI_MakeOffset")
-    .constructor<>();
+    .constructor<>()
+    // Wire-based construction for pure 2D/planar wire offsetting (no
+    // underlying face needed) -- only the default constructor was bound
+    // before this; the face-based Init() overload already existed but
+    // there was no way to offset a standalone wire.
+    .constructor([](const TopoDS_Wire& spine, int join, bool isOpenResult) -> BRepOffsetAPI_MakeOffset* {
+      return occ_guard([&]{ return new BRepOffsetAPI_MakeOffset(spine, GeomAbs_JoinType(join), isOpenResult); });
+    });
 
   mod.add_type<BRepOffsetAPI_MakePipeShell>("BRepOffsetAPI_MakePipeShell")
     .constructor<const TopoDS_Wire&>();
