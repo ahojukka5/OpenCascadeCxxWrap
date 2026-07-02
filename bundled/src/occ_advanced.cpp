@@ -26,6 +26,9 @@ void register_occ_advanced(jlcxx::Module& mod) {
   mod.method("Generated",   [](BRepAlgoAPI_Splitter& s, const TopoDS_Shape& a) -> TopTools_ListOfShape {
     return s.Generated(a);
   });
+  mod.method("IsDeleted",   [](BRepAlgoAPI_Splitter& s, const TopoDS_Shape& a) -> bool {
+    return bool(s.IsDeleted(a));
+  });
 
   mod.add_type<BRepAlgoAPI_Defeaturing>("BRepAlgoAPI_Defeaturing").constructor<>();
   mod.method("SetShape", [](BRepAlgoAPI_Defeaturing& d, const TopoDS_Shape& s) { d.SetShape(s); });
