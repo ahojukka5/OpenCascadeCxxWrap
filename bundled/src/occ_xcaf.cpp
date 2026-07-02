@@ -7,6 +7,7 @@
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_ColorTool.hxx>
+#include <XCAFDoc_LayerTool.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
 #include <TDataStd_Name.hxx>
@@ -29,6 +30,7 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.add_type<TDocStd_Document>("TDocStd_Document");
   mod.add_type<XCAFDoc_ShapeTool>("XCAFDoc_ShapeTool");
   mod.add_type<XCAFDoc_ColorTool>("XCAFDoc_ColorTool");
+  mod.add_type<XCAFDoc_LayerTool>("XCAFDoc_LayerTool");
 
   mod.method("XCAFApp_GetApplication", []() -> Handle(XCAFApp_Application) {
     return XCAFApp_Application::GetApplication();
@@ -46,6 +48,52 @@ void register_occ_xcaf(jlcxx::Module& mod) {
 
   mod.method("XCAFDoc_ColorTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_ColorTool) {
     return XCAFDoc_DocumentTool::ColorTool(doc->Main());
+  });
+
+  mod.method("XCAFDoc_LayerTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_LayerTool) {
+    return XCAFDoc_DocumentTool::LayerTool(doc->Main());
+  });
+
+  mod.method("XCAFDoc_LayerTool_AddLayer", [](Handle(XCAFDoc_LayerTool)& tool,
+                                               const std::string& name) -> TDF_Label {
+    return tool->AddLayer(TCollection_ExtendedString(name.c_str()));
+  });
+
+  mod.method("XCAFDoc_LayerTool_SetLayer", [](Handle(XCAFDoc_LayerTool)& tool,
+                                               const TDF_Label& shapeLabel, const std::string& layerName) {
+    tool->SetLayer(shapeLabel, TCollection_ExtendedString(layerName.c_str()), false);
+  });
+
+  // Layer names as one ';'-joined string rather than a std::vector<std::string>
+  // return (no existing binding in this codebase returns a string collection,
+  // and this avoids introducing that risk for a single, low-traffic feature).
+  mod.method("XCAFDoc_LayerTool_GetLayerNames", [](Handle(XCAFDoc_LayerTool)& tool,
+                                                    const TDF_Label& shapeLabel) -> std::string {
+    TDF_LabelSequence labelSeq;
+    tool->GetLayers(shapeLabel, labelSeq);
+    std::string result;
+    for (int i = 1; i <= labelSeq.Length(); ++i) {
+      TCollection_ExtendedString name;
+      if (tool->GetLayer(labelSeq.Value(i), name)) {
+        if (!result.empty()) result += ";";
+        result += TCollection_AsciiString(name).ToCString();
+      }
+    }
+    return result;
+  });
+
+  mod.method("XCAFDoc_LayerTool_GetAllLayerNames", [](Handle(XCAFDoc_LayerTool)& tool) -> std::string {
+    TDF_LabelSequence labelSeq;
+    tool->GetLayerLabels(labelSeq);
+    std::string result;
+    for (int i = 1; i <= labelSeq.Length(); ++i) {
+      TCollection_ExtendedString name;
+      if (tool->GetLayer(labelSeq.Value(i), name)) {
+        if (!result.empty()) result += ";";
+        result += TCollection_AsciiString(name).ToCString();
+      }
+    }
+    return result;
   });
 
   mod.method("XCAFDoc_ShapeTool_AddShape", [](Handle(XCAFDoc_ShapeTool)& tool,
