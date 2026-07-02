@@ -7,6 +7,12 @@
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <gp_Dir.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Cylinder.hxx>
+#include <gp_Cone.hxx>
+#include <gp_Sphere.hxx>
+#include <gp_Torus.hxx>
+#include <GeomAbs_SurfaceType.hxx>
 
 void register_occ_adaptor(jlcxx::Module& mod) {
   mod.add_type<BRepAdaptor_Curve>("BRepAdaptor_Curve")
@@ -77,4 +83,26 @@ void register_occ_adaptor(jlcxx::Module& mod) {
     s.D1(u, v, p, d1u, d1v);
     return gp_Dir(d1u.Crossed(d1v));
   });
+
+  // Typed surface classification -- previously only inferred heuristically
+  // on the Julian side (planar-vs-not by normal variation at UV corners),
+  // this exposes OCCT's own honest classification and axis/radius extraction.
+  mod.method("GetType", [](const BRepAdaptor_Surface& s) -> int { return int(s.GetType()); });
+  mod.method("Plane",    [](const BRepAdaptor_Surface& s) -> gp_Pln { return s.Plane(); });
+  mod.method("Cylinder", [](const BRepAdaptor_Surface& s) -> gp_Cylinder { return s.Cylinder(); });
+  mod.method("Cone",     [](const BRepAdaptor_Surface& s) -> gp_Cone { return s.Cone(); });
+  mod.method("Sphere",   [](const BRepAdaptor_Surface& s) -> gp_Sphere { return s.Sphere(); });
+  mod.method("Torus",    [](const BRepAdaptor_Surface& s) -> gp_Torus { return s.Torus(); });
+
+  mod.method("GeomAbs_Plane",              []() { return int(GeomAbs_Plane); });
+  mod.method("GeomAbs_Cylinder",           []() { return int(GeomAbs_Cylinder); });
+  mod.method("GeomAbs_Cone",               []() { return int(GeomAbs_Cone); });
+  mod.method("GeomAbs_Sphere",             []() { return int(GeomAbs_Sphere); });
+  mod.method("GeomAbs_Torus",              []() { return int(GeomAbs_Torus); });
+  mod.method("GeomAbs_BezierSurface",      []() { return int(GeomAbs_BezierSurface); });
+  mod.method("GeomAbs_BSplineSurface",     []() { return int(GeomAbs_BSplineSurface); });
+  mod.method("GeomAbs_SurfaceOfRevolution",[]() { return int(GeomAbs_SurfaceOfRevolution); });
+  mod.method("GeomAbs_SurfaceOfExtrusion", []() { return int(GeomAbs_SurfaceOfExtrusion); });
+  mod.method("GeomAbs_OffsetSurface",      []() { return int(GeomAbs_OffsetSurface); });
+  mod.method("GeomAbs_OtherSurface",       []() { return int(GeomAbs_OtherSurface); });
 }
