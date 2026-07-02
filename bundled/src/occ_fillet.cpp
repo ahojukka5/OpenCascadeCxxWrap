@@ -14,6 +14,17 @@ void register_occ_fillet(jlcxx::Module& mod) {
   mod.add_type<BRepFilletAPI_MakeChamfer>("BRepFilletAPI_MakeChamfer")
      .constructor<const TopoDS_Shape&>();
 
+  // Law_Function-based variable radius (SetRadius(Handle(Law_Function)&,
+  // ic, iinc), fed by Law_Linear/Law_S) was attempted and abandoned: it
+  // segfaults deep in ChFi3d_Builder::Compute/ChFiDS_FilSpine::Reset on
+  // Build(), reproduced identically with both Law_Linear and Law_S, with
+  // parameter domains matching the edge's own range and normalized [0,1],
+  // and regardless of whether the contour was registered via a bare Add(e)
+  // or Add(radius, e) first. Tracked as a candidate OCCT crash bug in
+  // memory, not shipped. The simpler two-point linear taper via
+  // Add(R1, R2, E) below is unaffected (different, apparently more robust,
+  // internal OCCT code path) and is what fillet(body, edge, r1, r2) uses.
+
   mod.method("Add",        [](BRepFilletAPI_MakeFillet& m, double r, const TopoDS_Edge& e) { m.Add(r, e); });
   mod.method("Add",        [](BRepFilletAPI_MakeFillet& m, double r1, double r2, const TopoDS_Edge& e) {
     m.Add(r1, r2, e);
