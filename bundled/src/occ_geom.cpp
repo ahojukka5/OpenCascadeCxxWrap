@@ -29,6 +29,7 @@
 #include <TColgp_Array2OfPnt.hxx>
 #include <TColgp_HArray1OfPnt.hxx>
 #include <TColStd_Array1OfReal.hxx>
+#include <TColStd_Array2OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
 
 #include <gp_Pnt.hxx>
@@ -77,6 +78,18 @@ namespace {
       }
     }
     return poles;
+  }
+  // Row-major nu*nv flat weights array -> 1-based TColStd_Array2OfReal,
+  // mirroring PolesFromFlat2D exactly -- needed for the rational (weighted)
+  // Geom_BSplineSurface constructor overload.
+  TColStd_Array2OfReal RealsFromFlat2D(jlcxx::ArrayRef<double> flat, int nu, int nv) {
+    TColStd_Array2OfReal w(1, nu, 1, nv);
+    for (int i = 0; i < nu; ++i) {
+      for (int j = 0; j < nv; ++j) {
+        w.SetValue(i + 1, j + 1, flat[i * nv + j]);
+      }
+    }
+    return w;
   }
   // Heap-allocate a Handle(TColgp_HArray1OfPnt) from a flat point array --
   // GeomAPI_Interpolate's constructor takes this Handle-managed array type,
@@ -141,13 +154,35 @@ void register_occ_geom(jlcxx::Module& mod) {
 
   // ---- Concrete curve construction (free-function factories, named like the
   // class -- exactly the new_mesh() precedent for smart-pointer-managed types) ----
+  // Geom_BSplineCurve/Surface's constructors raise Standard_ConstructionError
+  // on an invalid poles/knots/multiplicities/degree combination (e.g. end
+  // multiplicities inconsistent with a non-periodic declaration -- confirmed
+  // empirically to otherwise abort the whole process, not just throw a
+  // catchable Julia exception, while implementing IGA extraction's
+  // round-trip verification against a full periodic cylindrical surface).
+  // occ_guard on every construction path here, not just the new rational
+  // overloads, since the plain (non-rational) ones were equally exposed.
   mod.method("Geom_BSplineCurve", [](jlcxx::ArrayRef<double> poles, jlcxx::ArrayRef<double> knots,
                                       jlcxx::ArrayRef<int32_t> mults, int degree,
                                       bool periodic) -> Handle(Geom_Curve) {
     TColgp_Array1OfPnt p = PolesFromFlat(poles);
     TColStd_Array1OfReal k = RealsFrom(knots);
     TColStd_Array1OfInteger m = IntsFrom(mults);
-    return new Geom_BSplineCurve(p, k, m, degree, periodic);
+    return occ_guard([&]{ return Handle(Geom_Curve)(new Geom_BSplineCurve(p, k, m, degree, periodic)); });
+  });
+  // Rational (weighted) overload -- the plain constructor above can only
+  // build a non-rational curve; genuinely circular/elliptical geometry
+  // (extracted via GeomConvert::CurveToBSplineCurve, occ_geomconvert.cpp)
+  // is rational and round-trips only through this one.
+  mod.method("Geom_BSplineCurve", [](jlcxx::ArrayRef<double> poles, jlcxx::ArrayRef<double> weights,
+                                      jlcxx::ArrayRef<double> knots,
+                                      jlcxx::ArrayRef<int32_t> mults, int degree,
+                                      bool periodic) -> Handle(Geom_Curve) {
+    TColgp_Array1OfPnt p = PolesFromFlat(poles);
+    TColStd_Array1OfReal w = RealsFrom(weights);
+    TColStd_Array1OfReal k = RealsFrom(knots);
+    TColStd_Array1OfInteger m = IntsFrom(mults);
+    return occ_guard([&]{ return Handle(Geom_Curve)(new Geom_BSplineCurve(p, w, k, m, degree, periodic)); });
   });
   mod.method("Geom_BezierCurve", [](jlcxx::ArrayRef<double> poles) -> Handle(Geom_Curve) {
     TColgp_Array1OfPnt p = PolesFromFlat(poles);
@@ -173,7 +208,30 @@ void register_occ_geom(jlcxx::Module& mod) {
     TColStd_Array1OfReal vk = RealsFrom(vknots);
     TColStd_Array1OfInteger um = IntsFrom(umults);
     TColStd_Array1OfInteger vm = IntsFrom(vmults);
-    return new Geom_BSplineSurface(p, uk, vk, um, vm, udegree, vdegree, uperiodic, vperiodic);
+    return occ_guard([&]{
+      return Handle(Geom_Surface)(new Geom_BSplineSurface(p, uk, vk, um, vm, udegree, vdegree, uperiodic, vperiodic));
+    });
+  });
+  // Rational (weighted) overload -- the plain constructor above can only
+  // build a non-rational surface; genuinely curved analytic geometry
+  // (extracted via GeomConvert::SurfaceToBSplineSurface, occ_geomconvert.cpp
+  // -- cylinders, cones, spheres, tori) is rational and round-trips only
+  // through this one.
+  mod.method("Geom_BSplineSurface", [](jlcxx::ArrayRef<double> polesFlat, jlcxx::ArrayRef<double> weightsFlat,
+                                        int nu, int nv,
+                                        jlcxx::ArrayRef<double> uknots, jlcxx::ArrayRef<double> vknots,
+                                        jlcxx::ArrayRef<int32_t> umults, jlcxx::ArrayRef<int32_t> vmults,
+                                        int udegree, int vdegree,
+                                        bool uperiodic, bool vperiodic) -> Handle(Geom_Surface) {
+    TColgp_Array2OfPnt p = PolesFromFlat2D(polesFlat, nu, nv);
+    TColStd_Array2OfReal w = RealsFromFlat2D(weightsFlat, nu, nv);
+    TColStd_Array1OfReal uk = RealsFrom(uknots);
+    TColStd_Array1OfReal vk = RealsFrom(vknots);
+    TColStd_Array1OfInteger um = IntsFrom(umults);
+    TColStd_Array1OfInteger vm = IntsFrom(vmults);
+    return occ_guard([&]{
+      return Handle(Geom_Surface)(new Geom_BSplineSurface(p, w, uk, vk, um, vm, udegree, vdegree, uperiodic, vperiodic));
+    });
   });
 
   // ---- Analytic surface factories ----
