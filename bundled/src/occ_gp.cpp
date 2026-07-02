@@ -27,6 +27,7 @@
 #include <gp_Torus.hxx>
 #include <gp_Mat.hxx>
 #include <gp_GTrsf.hxx>
+#include <gp_Quaternion.hxx>
 
 void register_occ_gp(jlcxx::Module& mod) {
   // ===== gp: 3D value types =================================================
@@ -77,6 +78,28 @@ void register_occ_gp(jlcxx::Module& mod) {
   mod.method("SetMirror",      [](gp_Trsf& t, const gp_Ax2& a) { t.SetMirror(a); });
   mod.method("SetScale",       [](gp_Trsf& t, const gp_Pnt& p, double s) { t.SetScale(p, s); });
   mod.method("Transformed", [](const gp_Pnt& p, const gp_Trsf& t) -> gp_Pnt { return p.Transformed(t); });
+
+  // Composable, gimbal-lock-free rotation representation -- infrastructure
+  // for assembly work (mates/placements), not yet exposed at the public
+  // Monge API level (rotate()'s existing axis+angle interface covers
+  // today's needs; nothing yet needs quaternion composition/SLERP).
+  mod.add_type<gp_Quaternion>("gp_Quaternion")
+     .constructor<>()
+     .constructor<double, double, double, double>()
+     .constructor<const gp_Vec&, double>()          // axis, angle
+     .constructor<const gp_Vec&, const gp_Vec&>();  // shortest-arc vecFrom -> vecTo
+  mod.method("X", [](const gp_Quaternion& q) -> double { return q.X(); });
+  mod.method("Y", [](const gp_Quaternion& q) -> double { return q.Y(); });
+  mod.method("Z", [](const gp_Quaternion& q) -> double { return q.Z(); });
+  mod.method("W", [](const gp_Quaternion& q) -> double { return q.W(); });
+  mod.method("Multiply", [](const gp_Quaternion& q, const gp_Vec& v) -> gp_Vec { return q.Multiply(v); });
+  mod.method("Multiply", [](const gp_Quaternion& a, const gp_Quaternion& b) -> gp_Quaternion { return a * b; });
+  mod.method("Inverted", [](const gp_Quaternion& q) -> gp_Quaternion { return q.Inverted(); });
+  mod.method("GetVectorAndAngle", [](const gp_Quaternion& q) {
+    gp_Vec axis; double angle = 0.0;
+    q.GetVectorAndAngle(axis, angle);
+    return std::make_tuple(axis, angle);
+  });
 
   // ===== gp: 2D value types =================================================
   mod.add_type<gp_XY>("gp_XY").constructor<>().constructor<double, double>();
