@@ -52,6 +52,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_normalproj.cpp
   src/occ_chfi2d.cpp
   src/occ_geomplate.cpp
+  src/occ_geomconvert.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
