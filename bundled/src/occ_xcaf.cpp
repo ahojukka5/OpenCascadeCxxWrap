@@ -161,6 +161,17 @@ void register_occ_xcaf(jlcxx::Module& mod) {
     return XCAFDoc_ShapeTool::GetLocation(label);
   });
 
+  // Read-side counterpart to AddComponent above: given a component label,
+  // find the label of the prototype shape it refers to (so its actual
+  // geometry can be fetched via XCAFDoc_ShapeTool_GetShape on the result) --
+  // needed to reconstruct a Monge Assembly from a nested XCAF component
+  // tree read back from STEP, not just to build one for writing.
+  mod.method("XCAFDoc_ShapeTool_GetReferredShape", [](const TDF_Label& label) -> TDF_Label {
+    TDF_Label referred;
+    XCAFDoc_ShapeTool::GetReferredShape(label, referred);
+    return referred;
+  });
+
   mod.method("TDataStd_Name_Set", [](const TDF_Label& label, const std::string& name) {
     TCollection_ExtendedString ext(name.c_str());
     TDataStd_Name::Set(label, ext);
