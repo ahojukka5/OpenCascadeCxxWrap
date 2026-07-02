@@ -31,6 +31,8 @@ void register_occ_geom2d(jlcxx::Module&);
 void register_occ_advanced(jlcxx::Module&);
 void register_occ_xcaf(jlcxx::Module&);
 void register_occ_breplib(jlcxx::Module&);
+void register_occ_history(jlcxx::Module&);
+void register_occ_bopalgo_analyzer(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
@@ -63,4 +65,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_breplib(mod);
   register_occ_advanced(mod);
   register_occ_xcaf(mod);
+  register_occ_history(mod);
+  register_occ_bopalgo_analyzer(mod);
 }
