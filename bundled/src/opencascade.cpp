@@ -36,6 +36,7 @@ void register_occ_bopalgo_analyzer(jlcxx::Module&);
 void register_occ_triangulation(jlcxx::Module&);
 void register_occ_interface_static(jlcxx::Module&);
 void register_occ_gltf(jlcxx::Module&);
+void register_occ_fill(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
@@ -73,4 +74,5 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_triangulation(mod);
   register_occ_interface_static(mod);
   register_occ_gltf(mod);
+  register_occ_fill(mod);
 }

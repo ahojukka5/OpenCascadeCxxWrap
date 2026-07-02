@@ -45,6 +45,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_triangulation.cpp
   src/occ_interface_static.cpp
   src/occ_gltf.cpp
+  src/occ_fill.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
