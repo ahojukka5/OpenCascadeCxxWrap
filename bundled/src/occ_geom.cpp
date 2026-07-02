@@ -7,6 +7,7 @@
 // constructors reference Handle(Geom_Curve)/Handle(Geom_Surface), which must
 // already be add_type'd by the time those add_type chains are built.
 #include "occ_handle_traits.hpp"
+#include "occ_exception.hpp"
 #include <jlcxx/array.hpp>
 
 #include <Geom_Curve.hxx>
@@ -22,8 +23,11 @@
 #include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <GeomAPI_Interpolate.hxx>
 
 #include <TColgp_Array1OfPnt.hxx>
+#include <TColgp_Array2OfPnt.hxx>
+#include <TColgp_HArray1OfPnt.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColStd_Array1OfInteger.hxx>
 
@@ -59,6 +63,33 @@ namespace {
     TColStd_Array1OfInteger arr(1, n);
     for (int i = 0; i < n; ++i) arr.SetValue(i + 1, vals[i]);
     return arr;
+  }
+  // Marshal a flat, interleaved-XYZ jlcxx::ArrayRef<double> into a 1-based,
+  // row-major nu*nv TColgp_Array2OfPnt (row i, column j -> flat index
+  // (i*nv + j)*3, matching how Julia's Matrix{Point} is flattened row-major
+  // in surfaces.jl).
+  TColgp_Array2OfPnt PolesFromFlat2D(jlcxx::ArrayRef<double> flatXYZ, int nu, int nv) {
+    TColgp_Array2OfPnt poles(1, nu, 1, nv);
+    for (int i = 0; i < nu; ++i) {
+      for (int j = 0; j < nv; ++j) {
+        int k = (i * nv + j) * 3;
+        poles.SetValue(i + 1, j + 1, gp_Pnt(flatXYZ[k], flatXYZ[k+1], flatXYZ[k+2]));
+      }
+    }
+    return poles;
+  }
+  // Heap-allocate a Handle(TColgp_HArray1OfPnt) from a flat point array --
+  // GeomAPI_Interpolate's constructor takes this Handle-managed array type,
+  // but it's purely an internal marshalling detail, never exposed to Julia
+  // as a bound type (unlike TColgp_Array1OfPnt, which is stack-allocated
+  // and passed by value into ordinary Geom_* constructors above).
+  Handle(TColgp_HArray1OfPnt) HArray1OfPntFromFlat(jlcxx::ArrayRef<double> flatXYZ) {
+    int n = int(flatXYZ.size()) / 3;
+    Handle(TColgp_HArray1OfPnt) pts = new TColgp_HArray1OfPnt(1, n);
+    for (int i = 0; i < n; ++i) {
+      pts->SetValue(i + 1, gp_Pnt(flatXYZ[3*i], flatXYZ[3*i+1], flatXYZ[3*i+2]));
+    }
+    return pts;
   }
 }
 
@@ -129,6 +160,22 @@ void register_occ_geom(jlcxx::Module& mod) {
     return new Geom_BezierCurve(p, w);
   });
 
+  // ---- Concrete surface construction ----
+  // Poles are row-major nu*nv (see PolesFromFlat2D); knot/mult arrays follow
+  // Geom_BSplineSurface's own U-then-V constructor argument order.
+  mod.method("Geom_BSplineSurface", [](jlcxx::ArrayRef<double> polesFlat, int nu, int nv,
+                                        jlcxx::ArrayRef<double> uknots, jlcxx::ArrayRef<double> vknots,
+                                        jlcxx::ArrayRef<int32_t> umults, jlcxx::ArrayRef<int32_t> vmults,
+                                        int udegree, int vdegree,
+                                        bool uperiodic, bool vperiodic) -> Handle(Geom_Surface) {
+    TColgp_Array2OfPnt p = PolesFromFlat2D(polesFlat, nu, nv);
+    TColStd_Array1OfReal uk = RealsFrom(uknots);
+    TColStd_Array1OfReal vk = RealsFrom(vknots);
+    TColStd_Array1OfInteger um = IntsFrom(umults);
+    TColStd_Array1OfInteger vm = IntsFrom(vmults);
+    return new Geom_BSplineSurface(p, uk, vk, um, vm, udegree, vdegree, uperiodic, vperiodic);
+  });
+
   // ---- Analytic surface factories ----
   mod.method("Geom_Plane", [](const gp_Ax3& ax) -> Handle(Geom_Surface) { return new Geom_Plane(ax); });
   mod.method("Geom_Plane", [](const gp_Pln& pln) -> Handle(Geom_Surface) { return new Geom_Plane(pln); });
@@ -158,6 +205,19 @@ void register_occ_geom(jlcxx::Module& mod) {
     GeomAPI_PointsToBSpline fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
     return fitter.Curve();
   });
+
+  // ---- Curve interpolation (point-only constraints; tangent-vector Load()
+  // overloads deliberately not bound yet -- no current caller needs them) ----
+  mod.add_type<GeomAPI_Interpolate>("GeomAPI_Interpolate")
+     .constructor([](jlcxx::ArrayRef<double> points, bool periodic, double tol) -> GeomAPI_Interpolate* {
+       return occ_guard([&]{ return new GeomAPI_Interpolate(HArray1OfPntFromFlat(points), periodic, tol); });
+     });
+  // Perform() can throw Standard_ConstructionError (points too close /
+  // degenerate tangents) -- a real Standard_Failure path per the header's
+  // documented Exceptions, not just an IsDone()==false outcome.
+  mod.method("Perform", [](GeomAPI_Interpolate& interp) { occ_guard([&]{ interp.Perform(); return 0; }); });
+  mod.method("IsDone",  [](const GeomAPI_Interpolate& interp) -> bool { return bool(interp.IsDone()); });
+  mod.method("Curve",   [](const GeomAPI_Interpolate& interp) -> Handle(Geom_Curve) { return interp.Curve(); });
 
   // ---- Point projection ----
   mod.add_type<GeomAPI_ProjectPointOnCurve>("GeomAPI_ProjectPointOnCurve")
