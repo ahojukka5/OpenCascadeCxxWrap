@@ -74,10 +74,12 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_draft(mod);
   register_occ_breplib(mod);
   register_occ_advanced(mod);
+  // triangulation add_type's TopLoc_Location, now referenced by
+  // occ_xcaf.cpp's assembly-component-tree bindings -- must precede it.
+  register_occ_triangulation(mod);
   register_occ_xcaf(mod);
   register_occ_history(mod);
   register_occ_bopalgo_analyzer(mod);
-  register_occ_triangulation(mod);
   register_occ_interface_static(mod);
   register_occ_gltf(mod);
   register_occ_fill(mod);

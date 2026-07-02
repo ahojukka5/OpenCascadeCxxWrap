@@ -16,6 +16,7 @@
 #include <XCAFDoc_ColorType.hxx>
 #include <STEPControl_StepModelType.hxx>
 #include <TopoDS_Shape.hxx>
+#include <TopLoc_Location.hxx>
 #include <TDF_Label.hxx>
 #include <TDF_LabelSequence.hxx>
 #include <TCollection_AsciiString.hxx>
@@ -128,6 +129,36 @@ void register_occ_xcaf(jlcxx::Module& mod) {
     if (!tool->GetComponents(label, components)) return TDF_Label();
     if (index < 1 || index > components.Length()) return TDF_Label();
     return components.Value(index);
+  });
+
+  // Component-tree construction (native XCAF assemblies: a prototype shape
+  // label + one component label per placed instance, replacing Assembly's
+  // previous flat baked-transform-only representation).
+  mod.method("XCAFDoc_ShapeTool_NewShape", [](Handle(XCAFDoc_ShapeTool)& tool) -> TDF_Label {
+    return tool->NewShape();
+  });
+
+  mod.method("XCAFDoc_ShapeTool_AddComponent", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                                   const TDF_Label& assembly,
+                                                   const TDF_Label& comp,
+                                                   const TopLoc_Location& loc) -> TDF_Label {
+    return tool->AddComponent(assembly, comp, loc);
+  });
+
+  mod.method("XCAFDoc_ShapeTool_UpdateAssemblies", [](Handle(XCAFDoc_ShapeTool)& tool) {
+    tool->UpdateAssemblies();
+  });
+
+  mod.method("XCAFDoc_ShapeTool_IsAssembly", [](const TDF_Label& label) -> bool {
+    return bool(XCAFDoc_ShapeTool::IsAssembly(label));
+  });
+
+  mod.method("XCAFDoc_ShapeTool_IsComponent", [](const TDF_Label& label) -> bool {
+    return bool(XCAFDoc_ShapeTool::IsComponent(label));
+  });
+
+  mod.method("XCAFDoc_ShapeTool_GetLocation", [](const TDF_Label& label) -> TopLoc_Location {
+    return XCAFDoc_ShapeTool::GetLocation(label);
   });
 
   mod.method("TDataStd_Name_Set", [](const TDF_Label& label, const std::string& name) {

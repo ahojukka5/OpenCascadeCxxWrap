@@ -23,7 +23,12 @@ namespace jlcxx {
 }
 
 void register_occ_triangulation(jlcxx::Module& mod) {
-  mod.add_type<TopLoc_Location>("TopLoc_Location").constructor<>();
+  // The gp_Trsf-taking constructor is needed to build a non-identity
+  // placement from Julia (e.g. an XCAF assembly component's location) --
+  // previously only the default (identity) constructor was bound, since
+  // Transformation() (read-only) was all export_glb's mesh-placement path
+  // needed.
+  mod.add_type<TopLoc_Location>("TopLoc_Location").constructor<>().constructor<const gp_Trsf&>();
   mod.method("IsIdentity", [](const TopLoc_Location& l) -> bool { return bool(l.IsIdentity()); });
   mod.method("Transformation", [](const TopLoc_Location& l) -> gp_Trsf { return l.Transformation(); });
 

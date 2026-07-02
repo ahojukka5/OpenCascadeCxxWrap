@@ -78,6 +78,11 @@ void register_occ_gp(jlcxx::Module& mod) {
   mod.method("SetMirror",      [](gp_Trsf& t, const gp_Ax2& a) { t.SetMirror(a); });
   mod.method("SetScale",       [](gp_Trsf& t, const gp_Pnt& p, double s) { t.SetScale(p, s); });
   mod.method("Transformed", [](const gp_Pnt& p, const gp_Trsf& t) -> gp_Pnt { return p.Transformed(t); });
+  // Composition -- t1.Multiplied(t2) applies t2 first, then t1 (matches
+  // matrix-multiplication convention). Needed to combine a sequence of
+  // primitive placements (translate/rotate) into one TopLoc_Location for
+  // XCAF assembly components (src/assembly.jl's Transform*Transform).
+  mod.method("Multiplied", [](const gp_Trsf& t1, const gp_Trsf& t2) -> gp_Trsf { return t1.Multiplied(t2); });
 
   // Composable, gimbal-lock-free rotation representation -- infrastructure
   // for assembly work (mates/placements), not yet exposed at the public
