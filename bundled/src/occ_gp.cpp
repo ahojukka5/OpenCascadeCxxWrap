@@ -76,6 +76,7 @@ void register_occ_gp(jlcxx::Module& mod) {
   mod.method("SetRotation",    [](gp_Trsf& t, const gp_Ax1& a, double ang) { t.SetRotation(a, ang); });
   mod.method("SetMirror",      [](gp_Trsf& t, const gp_Ax2& a) { t.SetMirror(a); });
   mod.method("SetScale",       [](gp_Trsf& t, const gp_Pnt& p, double s) { t.SetScale(p, s); });
+  mod.method("Transformed", [](const gp_Pnt& p, const gp_Trsf& t) -> gp_Pnt { return p.Transformed(t); });
 
   // ===== gp: 2D value types =================================================
   mod.add_type<gp_XY>("gp_XY").constructor<>().constructor<double, double>();
