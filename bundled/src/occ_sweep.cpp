@@ -1,4 +1,5 @@
 #include <jlcxx/jlcxx.hpp>
+#include "occ_exception.hpp"
 
 #include <BRepOffsetAPI_MakePipe.hxx>
 #include <BRepOffsetAPI_ThruSections.hxx>
@@ -14,6 +15,7 @@
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopoDS_Shape.hxx>
+#include <TopTools_ListOfShape.hxx>
 
 void register_occ_sweep(jlcxx::Module& mod)
 {
@@ -45,6 +47,15 @@ void register_occ_sweep(jlcxx::Module& mod)
   mod.method("SetTransitionMode", [](BRepOffsetAPI_MakePipeShell& p, int mode) {
     p.SetTransitionMode(BRepBuilderAPI_TransitionMode(mode));
   });
+  mod.method("Modified", [](BRepOffsetAPI_MakePipeShell& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_MakePipeShell& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_MakePipeShell& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 
   mod.add_type<BRepOffsetAPI_MakeEvolved>("BRepOffsetAPI_MakeEvolved")
     .constructor<>()
@@ -52,6 +63,15 @@ void register_occ_sweep(jlcxx::Module& mod)
   mod.method("Build", [](BRepOffsetAPI_MakeEvolved& e) { e.Build(); });
   mod.method("IsDone", [](const BRepOffsetAPI_MakeEvolved& e) -> bool { return bool(e.IsDone()); });
   mod.method("Shape", [](BRepOffsetAPI_MakeEvolved& e) -> TopoDS_Shape { return e.Shape(); });
+  mod.method("Modified", [](BRepOffsetAPI_MakeEvolved& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_MakeEvolved& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_MakeEvolved& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
 
   // --- BRepOffsetAPI_MakePipe methods ---
 
@@ -71,6 +91,16 @@ void register_occ_sweep(jlcxx::Module& mod)
     return pipe.ErrorOnSurface();
   });
 
+  mod.method("Modified", [](BRepOffsetAPI_MakePipe& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_MakePipe& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_MakePipe& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
+  });
+
   // --- BRepOffsetAPI_ThruSections methods ---
 
   mod.method("AddWire", [](BRepOffsetAPI_ThruSections& t, const TopoDS_Wire& wire) {
@@ -82,7 +112,7 @@ void register_occ_sweep(jlcxx::Module& mod)
   });
 
   mod.method("Build", [](BRepOffsetAPI_ThruSections& t) {
-    t.Build();
+    occ_guard([&]{ t.Build(); return 0; });
   });
 
   mod.method("IsDone", [](BRepOffsetAPI_ThruSections& t) -> bool {
@@ -95,6 +125,15 @@ void register_occ_sweep(jlcxx::Module& mod)
 
   mod.method("CheckCompatibility", [](BRepOffsetAPI_ThruSections& t, bool check) {
     t.CheckCompatibility(check);
+  });
+  mod.method("Modified", [](BRepOffsetAPI_ThruSections& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_ThruSections& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_ThruSections& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
   });
 
   // --- BRepOffsetAPI_MakeOffsetShape methods ---
@@ -111,6 +150,16 @@ void register_occ_sweep(jlcxx::Module& mod)
 
   mod.method("Shape", [](BRepOffsetAPI_MakeOffsetShape& m) -> TopoDS_Shape {
     return m.Shape();
+  });
+
+  mod.method("Modified", [](BRepOffsetAPI_MakeOffsetShape& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Modified(s);
+  });
+  mod.method("Generated", [](BRepOffsetAPI_MakeOffsetShape& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
+  });
+  mod.method("IsDeleted", [](BRepOffsetAPI_MakeOffsetShape& m, const TopoDS_Shape& s) -> bool {
+    return bool(m.IsDeleted(s));
   });
 
   // --- BRepOffsetAPI_MakeOffset methods ---
