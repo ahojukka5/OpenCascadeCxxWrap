@@ -36,6 +36,9 @@
 #include <TopoDS_CompSolid.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <BRepBuilderAPI_WireError.hxx>
+#include <BRepBuilderAPI_FaceError.hxx>
+#include <BRepBuilderAPI_ShellError.hxx>
+#include <BRepBuilderAPI_EdgeError.hxx>
 
 #include <BRepBuilderAPI_GTransform.hxx>
 
@@ -167,6 +170,16 @@ void register_occ_builders(jlcxx::Module& mod) {
      .constructor<const TopoDS_Vertex&, const TopoDS_Vertex&>();
   mod.method("Shape", [](BRepBuilderAPI_MakeEdge& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Edge",  [](BRepBuilderAPI_MakeEdge& m) -> TopoDS_Edge  { return m.Edge(); });
+  mod.method("IsDone",[](const BRepBuilderAPI_MakeEdge& m) -> bool { return bool(m.IsDone()); });
+  mod.method("Error", [](const BRepBuilderAPI_MakeEdge& m) -> int { return int(m.Error()); });
+
+  mod.method("BRepBuilderAPI_EdgeDone",                     []() { return int(BRepBuilderAPI_EdgeDone); });
+  mod.method("BRepBuilderAPI_PointProjectionFailed",        []() { return int(BRepBuilderAPI_PointProjectionFailed); });
+  mod.method("BRepBuilderAPI_ParameterOutOfRange",          []() { return int(BRepBuilderAPI_ParameterOutOfRange); });
+  mod.method("BRepBuilderAPI_DifferentPointsOnClosedCurve", []() { return int(BRepBuilderAPI_DifferentPointsOnClosedCurve); });
+  mod.method("BRepBuilderAPI_PointWithInfiniteParameter",   []() { return int(BRepBuilderAPI_PointWithInfiniteParameter); });
+  mod.method("BRepBuilderAPI_DifferentsPointAndParameter",  []() { return int(BRepBuilderAPI_DifferentsPointAndParameter); });
+  mod.method("BRepBuilderAPI_LineThroughIdenticPoints",     []() { return int(BRepBuilderAPI_LineThroughIdenticPoints); });
 
   mod.add_type<BRepBuilderAPI_MakeEdge2d>("BRepBuilderAPI_MakeEdge2d")
      .constructor<const Handle(Geom2d_Curve)&>()
@@ -216,6 +229,14 @@ void register_occ_builders(jlcxx::Module& mod) {
      .constructor<const TopoDS_Wire&, bool>();
   mod.method("Shape", [](BRepBuilderAPI_MakeFace& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Face",  [](BRepBuilderAPI_MakeFace& m) -> TopoDS_Face  { return m.Face(); });
+  mod.method("IsDone",[](const BRepBuilderAPI_MakeFace& m) -> bool { return bool(m.IsDone()); });
+  mod.method("Error", [](const BRepBuilderAPI_MakeFace& m) -> int { return int(m.Error()); });
+
+  mod.method("BRepBuilderAPI_FaceDone",               []() { return int(BRepBuilderAPI_FaceDone); });
+  mod.method("BRepBuilderAPI_NoFace",                 []() { return int(BRepBuilderAPI_NoFace); });
+  mod.method("BRepBuilderAPI_NotPlanar",              []() { return int(BRepBuilderAPI_NotPlanar); });
+  mod.method("BRepBuilderAPI_CurveProjectionFailed",  []() { return int(BRepBuilderAPI_CurveProjectionFailed); });
+  mod.method("BRepBuilderAPI_ParametersOutOfRange",   []() { return int(BRepBuilderAPI_ParametersOutOfRange); });
 
   mod.add_type<BRepBuilderAPI_MakeShell>("BRepBuilderAPI_MakeShell").constructor<>();
   mod.method("Init", [](BRepBuilderAPI_MakeShell& m, const Handle(Geom_Surface)& s,
@@ -226,6 +247,11 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("Shape", [](BRepBuilderAPI_MakeShell& m) -> TopoDS_Shape { return m.Shape(); });
   mod.method("Shell", [](BRepBuilderAPI_MakeShell& m) -> TopoDS_Shell { return m.Shell(); });
   mod.method("Error", [](const BRepBuilderAPI_MakeShell& m) -> int { return int(m.Error()); });
+
+  mod.method("BRepBuilderAPI_ShellDone",                []() { return int(BRepBuilderAPI_ShellDone); });
+  mod.method("BRepBuilderAPI_EmptyShell",               []() { return int(BRepBuilderAPI_EmptyShell); });
+  mod.method("BRepBuilderAPI_DisconnectedShell",        []() { return int(BRepBuilderAPI_DisconnectedShell); });
+  mod.method("BRepBuilderAPI_ShellParametersOutOfRange",[]() { return int(BRepBuilderAPI_ShellParametersOutOfRange); });
 
   mod.add_type<BRepBuilderAPI_MakeSolid>("BRepBuilderAPI_MakeSolid").constructor<>()
      .constructor<const TopoDS_CompSolid&>()
