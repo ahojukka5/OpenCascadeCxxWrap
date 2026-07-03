@@ -1,5 +1,6 @@
 // occ_geom2d.cpp — Handle(Geom2d_Curve), GCE2d/GC curve makers for sketch workflows.
 #include "occ_handle_traits.hpp"
+#include "occ_exception.hpp"
 #include <jlcxx/jlcxx.hpp>
 
 #include <Geom2d_Curve.hxx>
@@ -8,6 +9,7 @@
 #include <Geom2d_Ellipse.hxx>
 #include <Geom2d_BSplineCurve.hxx>
 #include <Geom2d_TrimmedCurve.hxx>
+#include <Geom2d_OffsetCurve.hxx>
 
 #include <GCE2d_MakeSegment.hxx>
 #include <GCE2d_MakeArcOfCircle.hxx>
@@ -43,6 +45,12 @@ void register_occ_geom2d(jlcxx::Module& mod) {
   });
   mod.method("Geom2d_Ellipse", [](const gp_Ax2d& ax, double major, double minor) -> Handle(Geom2d_Curve) {
     return new Geom2d_Ellipse(ax, major, minor);
+  });
+  // Constant-offset sketch-plane curve -- fills a real gap (no 2D offset primitive
+  // existed at all before this), e.g. for thin-wall sketch profiles before extrude/revolve.
+  mod.method("Geom2d_OffsetCurve", [](const Handle(Geom2d_Curve)& c, double offset,
+                                       bool isNotCheckC0) -> Handle(Geom2d_Curve) {
+    return occ_guard([&]() -> Handle(Geom2d_Curve) { return new Geom2d_OffsetCurve(c, offset, isNotCheckC0); });
   });
 
   mod.add_type<GCE2d_MakeSegment>("GCE2d_MakeSegment")

@@ -15,6 +15,8 @@
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BezierCurve.hxx>
 #include <Geom_Plane.hxx>
+#include <Geom_OffsetCurve.hxx>
+#include <Geom_OffsetSurface.hxx>
 #include <Geom_CylindricalSurface.hxx>
 #include <Geom_SphericalSurface.hxx>
 #include <Geom_ToroidalSurface.hxx>
@@ -277,6 +279,17 @@ void register_occ_geom(jlcxx::Module& mod) {
     TColgp_Array2OfPnt p = PolesFromFlat2D(pointsFlat, nu, nv);
     GeomAPI_PointsToBSplineSurface fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
     return fitter.Surface();
+  });
+
+  // ---- Analytic offset curve/surface (Geom-level primitives, distinct from
+  // BRepOffsetAPI_MakeOffsetShape/MakeOffset which operate on topology) ----
+  mod.method("Geom_OffsetCurve", [](const Handle(Geom_Curve)& c, double offset, const gp_Dir& dir,
+                                     bool isNotCheckC0) -> Handle(Geom_Curve) {
+    return occ_guard([&]() -> Handle(Geom_Curve) { return new Geom_OffsetCurve(c, offset, dir, isNotCheckC0); });
+  });
+  mod.method("Geom_OffsetSurface", [](const Handle(Geom_Surface)& s, double offset,
+                                       bool isNotCheckC0) -> Handle(Geom_Surface) {
+    return occ_guard([&]() -> Handle(Geom_Surface) { return new Geom_OffsetSurface(s, offset, isNotCheckC0); });
   });
 
   // ---- Curve interpolation (point-only constraints; tangent-vector Load()
