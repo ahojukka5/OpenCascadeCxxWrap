@@ -54,6 +54,23 @@ void register_occ_xcaf(jlcxx::Module& mod) {
     return XCAFDoc_DocumentTool::LayerTool(doc->Main());
   });
 
+  // The document's own declared length unit (meters per model unit) -- STEPCAFControl_Reader
+  // already sets this automatically from a STEP file's own units (confirmed in
+  // STEPCAFControl_Reader.cxx's prepareUnits()), and RWGltf_CafWriter/RWObj_CafWriter's own
+  // Perform() already reads it automatically to scale mesh export output. A document created
+  // directly via XCAFApp_NewDocument (not from a STEP read) never gets this set, so mesh
+  // export silently applies no unit scaling at all -- this is the fix, not a new capability.
+  mod.method("XCAFDoc_DocumentTool_SetLengthUnit",
+             [](const Handle(TDocStd_Document)& doc, double unitInMeters) {
+    XCAFDoc_DocumentTool::SetLengthUnit(doc, unitInMeters);
+  });
+  mod.method("XCAFDoc_DocumentTool_GetLengthUnit",
+             [](const Handle(TDocStd_Document)& doc) -> double {
+    double v = -1.0;
+    XCAFDoc_DocumentTool::GetLengthUnit(doc, v);
+    return v;  // -1.0 sentinel = "not set", matching RWMesh_CoordinateSystemConverter's own convention
+  });
+
   mod.method("XCAFDoc_LayerTool_AddLayer", [](Handle(XCAFDoc_LayerTool)& tool,
                                                const std::string& name) -> TDF_Label {
     return tool->AddLayer(TCollection_ExtendedString(name.c_str()));
