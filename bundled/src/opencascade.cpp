@@ -35,6 +35,7 @@ void register_occ_history(jlcxx::Module&);
 void register_occ_bopalgo_analyzer(jlcxx::Module&);
 void register_occ_bopalgo_builder(jlcxx::Module&);
 void register_occ_feat_hole(jlcxx::Module&);
+void register_occ_helix(jlcxx::Module&);
 void register_occ_triangulation(jlcxx::Module&);
 void register_occ_interface_static(jlcxx::Module&);
 void register_occ_gltf(jlcxx::Module&);
@@ -85,6 +86,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_bopalgo_analyzer(mod);
   register_occ_bopalgo_builder(mod);
   register_occ_feat_hole(mod);
+  register_occ_helix(mod);
   register_occ_interface_static(mod);
   register_occ_gltf(mod);
   register_occ_fill(mod);
