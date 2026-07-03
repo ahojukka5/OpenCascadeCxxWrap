@@ -9,6 +9,7 @@
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_LayerTool.hxx>
 #include <XCAFDoc_MaterialTool.hxx>
+#include <XCAFDoc_Editor.hxx>
 #include <TCollection_HAsciiString.hxx>
 #include <NCollection_Sequence.hxx>
 #include <STEPCAFControl_Reader.hxx>
@@ -60,6 +61,12 @@ void register_occ_xcaf(jlcxx::Module& mod) {
 
   mod.method("XCAFDoc_ShapeTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_ShapeTool) {
     return XCAFDoc_DocumentTool::ShapeTool(doc->Main());
+  });
+
+  // The document's own root label -- needed as XCAFDoc_Editor::Expand's
+  // theDoc argument (distinct from any specific shape's label).
+  mod.method("XCAFDoc_Document_Main", [](const Handle(TDocStd_Document)& doc) -> TDF_Label {
+    return doc->Main();
   });
 
   mod.method("XCAFDoc_ColorTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_ColorTool) {
@@ -209,6 +216,14 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.method("XCAFDoc_ShapeTool_AddShape", [](Handle(XCAFDoc_ShapeTool)& tool,
                                                const TopoDS_Shape& s) -> TDF_Label {
     return tool->AddShape(s);
+  });
+  // 3-arg overload exposing AddShape's theExpand flag -- the 2-arg call
+  // above always defaults it to true (auto-expanding compounds on add),
+  // which makes XCAFDoc_Editor_Expand a no-op for anything added that way;
+  // pass expand=false to add a compound as a single un-expanded shape.
+  mod.method("XCAFDoc_ShapeTool_AddShape", [](Handle(XCAFDoc_ShapeTool)& tool,
+                                               const TopoDS_Shape& s, bool expand) -> TDF_Label {
+    return tool->AddShape(s, expand);
   });
 
   mod.method("XCAFDoc_GetOneFreeShape", [](Handle(XCAFDoc_ShapeTool)& tool) -> TopoDS_Shape {
@@ -389,4 +404,35 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.method("XCAFDoc_ColorGen", []() { return int(XCAFDoc_ColorGen); });
   mod.method("XCAFDoc_ColorSurf", []() { return int(XCAFDoc_ColorSurf); });
   mod.method("XCAFDoc_ColorCurv", []() { return int(XCAFDoc_ColorCurv); });
+
+  // ---- BOM instance count: how many places a prototype part is used
+  // across the assembly tree (not reachable before -- only
+  // ComponentCount/ComponentLabel/IsAssembly, which walk the tree the other
+  // direction: assembly -> its components, not component -> its users).
+  // Same NCollection_Sequence<TDF_Label> Count/Get marshaling as
+  // XCAFDoc_ComponentCount/ComponentLabel above.
+  mod.method("XCAFDoc_UserCount", [](const TDF_Label& label, bool getsubchilds) -> int {
+    TDF_LabelSequence users;
+    return XCAFDoc_ShapeTool::GetUsers(label, users, getsubchilds);
+  });
+  mod.method("XCAFDoc_UserLabel", [](const TDF_Label& label, int index, bool getsubchilds) -> TDF_Label {
+    TDF_LabelSequence users;
+    XCAFDoc_ShapeTool::GetUsers(label, users, getsubchilds);
+    if (index < 1 || index > users.Length()) return TDF_Label();
+    return users.Value(index);
+  });
+
+  // ---- XCAFDoc_Editor: static structural-editing utilities on a document's
+  // label tree. All plain static methods -- no add_type/Handle needed.
+  mod.method("XCAFDoc_Editor_RescaleGeometry",
+             [](const TDF_Label& label, double scaleFactor, bool forceIfNotRoot) -> bool {
+    return bool(XCAFDoc_Editor::RescaleGeometry(label, scaleFactor, forceIfNotRoot));
+  });
+  mod.method("XCAFDoc_Editor_Expand", [](const TDF_Label& doc, bool recursively) -> bool {
+    return bool(XCAFDoc_Editor::Expand(doc, recursively));
+  });
+  mod.method("XCAFDoc_Editor_ExpandShape",
+             [](const TDF_Label& doc, const TDF_Label& shape, bool recursively) -> bool {
+    return bool(XCAFDoc_Editor::Expand(doc, shape, recursively));
+  });
 }
