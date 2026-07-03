@@ -1,10 +1,15 @@
 // occ_shape_analysis.cpp — 1:1 CxxWrap bindings for free-boundary and shell analysis.
+#include "occ_handle_traits.hpp"
 #include <jlcxx/jlcxx.hpp>
 
 #include <ShapeAnalysis_FreeBounds.hxx>
 #include <ShapeAnalysis_Shell.hxx>
 #include <ShapeAnalysis_Edge.hxx>
 #include <ShapeAnalysis_Wire.hxx>
+#include <ShapeAnalysis_Surface.hxx>
+#include <Geom_Surface.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Pnt2d.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS_Edge.hxx>
@@ -34,6 +39,12 @@ void register_occ_shape_analysis(jlcxx::Module& mod) {
   mod.add_type<ShapeAnalysis_Wire>("ShapeAnalysis_Wire")
      .constructor<>()
      .constructor<const TopoDS_Wire&, const TopoDS_Face&, double>();
+
+  // ShapeAnalysis_Surface is Standard_Transient, only ever constructed from
+  // Julia via the NewShapeAnalysisSurface factory below (same "add_type
+  // without .constructor<>(), separately-named New* factory" idiom as
+  // ShapeCustom_RestrictionParameters/TCollection_HAsciiString).
+  mod.add_type<ShapeAnalysis_Surface>("ShapeAnalysis_Surface");
 
   // ---- ShapeAnalysis_FreeBounds methods ----
 
@@ -117,4 +128,43 @@ void register_occ_shape_analysis(jlcxx::Module& mod) {
     return bool(w.CheckSelfIntersection());
   });
   mod.method("CheckGaps3d", [](ShapeAnalysis_Wire& w) -> bool { return bool(w.CheckGaps3d()); });
+
+  // ---- ShapeAnalysis_Surface ----
+  // Complements GeomAPI_ProjectPointOnSurf with pole/seam-aware projection:
+  // ValueOfUV/NextValueOfUV specifically improve on naive projection near
+  // surface boundaries/poles (spheres/cones), and NextValueOfUV additionally
+  // avoids seam-parameter jumps by stepping from a previous UV solution --
+  // something GeomAPI_ProjectPointOnSurf structurally cannot do (no
+  // "previous solution" input).
+
+  // ShapeAnalysis_Surface is Standard_Transient (genuinely Handle-managed,
+  // unlike e.g. XCAFDimTolObjects_Tool which merely has a Handle(Document)
+  // constructor argument): methods take a Handle(ShapeAnalysis_Surface)&
+  // and dereference explicitly (same idiom as TCollection_HAsciiString's
+  // ToCString), since jlcxx has no implicit Handle(T) -> T& conversion at
+  // the Julia dispatch layer -- passing a bare ShapeAnalysis_Surface& here
+  // does not accept a Handle(ShapeAnalysis_Surface) value from Julia.
+  mod.method("NewShapeAnalysisSurface", [](const Handle(Geom_Surface)& s) -> Handle(ShapeAnalysis_Surface) {
+    return new ShapeAnalysis_Surface(s);
+  });
+  mod.method("ValueOfUV", [](const Handle(ShapeAnalysis_Surface)& sa, const gp_Pnt& p, double preci) -> gp_Pnt2d {
+    return sa->ValueOfUV(p, preci);
+  });
+  mod.method("NextValueOfUV", [](const Handle(ShapeAnalysis_Surface)& sa, const gp_Pnt2d& prevUV,
+                                  const gp_Pnt& p, double preci, double maxpreci) -> gp_Pnt2d {
+    return sa->NextValueOfUV(prevUV, p, preci, maxpreci);
+  });
+  mod.method("IsDegenerated", [](const Handle(ShapeAnalysis_Surface)& sa, const gp_Pnt& p, double preci) -> bool {
+    return bool(sa->IsDegenerated(p, preci));
+  });
+  mod.method("HasSingularities", [](const Handle(ShapeAnalysis_Surface)& sa, double preci) -> bool {
+    return bool(sa->HasSingularities(preci));
+  });
+  mod.method("IsUClosed", [](const Handle(ShapeAnalysis_Surface)& sa, double preci) -> bool {
+    return bool(sa->IsUClosed(preci));
+  });
+  mod.method("IsVClosed", [](const Handle(ShapeAnalysis_Surface)& sa, double preci) -> bool {
+    return bool(sa->IsVClosed(preci));
+  });
+  mod.method("Gap", [](const Handle(ShapeAnalysis_Surface)& sa) -> double { return sa->Gap(); });
 }
