@@ -1,13 +1,19 @@
-// occ_advanced.cpp — Splitter, Defeaturing, STL export.
+// occ_advanced.cpp — Splitter, Defeaturing, STL import/export.
 #include "occ_handle_traits.hpp"
 #include <jlcxx/jlcxx.hpp>
 
 #include <BRepAlgoAPI_Splitter.hxx>
 #include <BRepAlgoAPI_Defeaturing.hxx>
 #include <StlAPI_Writer.hxx>
+#include <StlAPI_Reader.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Shape.hxx>
+#include <stdexcept>
+
+namespace jlcxx {
+  template<> struct IsMirroredType<StlAPI_Reader> : std::false_type { };
+}
 
 void register_occ_advanced(jlcxx::Module& mod) {
   mod.add_type<BRepAlgoAPI_Splitter>("BRepAlgoAPI_Splitter").constructor<>();
@@ -43,5 +49,14 @@ void register_occ_advanced(jlcxx::Module& mod) {
   mod.add_type<StlAPI_Writer>("StlAPI_Writer").constructor<>();
   mod.method("Write", [](StlAPI_Writer& w, const TopoDS_Shape& s, const std::string& f) {
     return bool(w.Write(s, f.c_str()));
+  });
+
+  mod.add_type<StlAPI_Reader>("StlAPI_Reader").constructor<>();
+  mod.method("Read", [](StlAPI_Reader& r, const std::string& f) -> TopoDS_Shape {
+    TopoDS_Shape s;
+    if (!r.Read(s, f.c_str())) {
+      throw std::runtime_error("StlAPI_Reader::Read failed: " + f);
+    }
+    return s;
   });
 }
