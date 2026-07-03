@@ -65,6 +65,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_geomconvert.cpp
   src/occ_vrml.cpp
   src/occ_findplane.cpp
+  src/occ_bintools.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 

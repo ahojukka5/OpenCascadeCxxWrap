@@ -56,6 +56,7 @@ void register_occ_geomplate(jlcxx::Module&);
 void register_occ_geomconvert(jlcxx::Module&);
 void register_occ_vrml(jlcxx::Module&);
 void register_occ_findplane(jlcxx::Module&);
+void register_occ_bintools(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
@@ -115,4 +116,5 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_geomconvert(mod);
   register_occ_vrml(mod);
   register_occ_findplane(mod);
+  register_occ_bintools(mod);
 }
