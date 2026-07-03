@@ -32,14 +32,9 @@
 using HArray1OfReal = NCollection_HArray1<double>;
 
 void register_occ_dimtol(jlcxx::Module& mod) {
-  // ---- TCollection_HAsciiString: minimal Handle-string bridge ----
-  mod.add_type<TCollection_HAsciiString>("TCollection_HAsciiString");
-  mod.method("NewHAsciiString", [](const std::string& s) -> Handle(TCollection_HAsciiString) {
-    return new TCollection_HAsciiString(s.c_str());
-  });
-  mod.method("ToCString", [](const Handle(TCollection_HAsciiString)& s) -> std::string {
-    return s.IsNull() ? std::string() : std::string(s->ToCString());
-  });
+  // TCollection_HAsciiString itself is add_type'd + given its NewHAsciiString/ToCString
+  // factory in occ_xcaf.cpp now (Round 21 needed it there too, and occ_xcaf.cpp registers
+  // earlier than this file -- registration order matters for Handle(T) factories).
 
   // ---- NCollection_HArray1<double>: DimensionObject::GetValues()'s raw array ----
   mod.add_type<HArray1OfReal>("HArray1OfReal");

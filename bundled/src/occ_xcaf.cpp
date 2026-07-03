@@ -8,6 +8,9 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFDoc_LayerTool.hxx>
+#include <XCAFDoc_MaterialTool.hxx>
+#include <TCollection_HAsciiString.hxx>
+#include <NCollection_Sequence.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
 #include <TDataStd_Name.hxx>
@@ -31,6 +34,19 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.add_type<XCAFDoc_ShapeTool>("XCAFDoc_ShapeTool");
   mod.add_type<XCAFDoc_ColorTool>("XCAFDoc_ColorTool");
   mod.add_type<XCAFDoc_LayerTool>("XCAFDoc_LayerTool");
+  mod.add_type<XCAFDoc_MaterialTool>("XCAFDoc_MaterialTool");
+
+  // TCollection_HAsciiString: minimal Handle-string bridge, needed by both this file's
+  // material-name/description fields and occ_dimtol.cpp's GD&T name fields -- registered
+  // here since occ_xcaf.cpp runs earlier than occ_dimtol.cpp (registration order matters
+  // for Handle(T) factories).
+  mod.add_type<TCollection_HAsciiString>("TCollection_HAsciiString");
+  mod.method("NewHAsciiString", [](const std::string& s) -> Handle(TCollection_HAsciiString) {
+    return new TCollection_HAsciiString(s.c_str());
+  });
+  mod.method("ToCString", [](const Handle(TCollection_HAsciiString)& s) -> std::string {
+    return s.IsNull() ? std::string() : std::string(s->ToCString());
+  });
 
   mod.method("XCAFApp_GetApplication", []() -> Handle(XCAFApp_Application) {
     return XCAFApp_Application::GetApplication();
@@ -52,6 +68,83 @@ void register_occ_xcaf(jlcxx::Module& mod) {
 
   mod.method("XCAFDoc_LayerTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_LayerTool) {
     return XCAFDoc_DocumentTool::LayerTool(doc->Main());
+  });
+
+  // ---- XCAFDoc_MaterialTool: physical/manufacturing material read-back ----
+  // STEPCAFControl_Reader already populates this from STEP AP242 material-designation
+  // entities when SetMatMode(reader, true) is set (io.jl's read_step_xcaf already does
+  // this) -- but until now nothing could read the result back out.
+  mod.method("XCAFDoc_MaterialTool", [](const Handle(TDocStd_Document)& doc) -> Handle(XCAFDoc_MaterialTool) {
+    return XCAFDoc_DocumentTool::MaterialTool(doc->Main());
+  });
+  mod.method("IsMaterial", [](const Handle(XCAFDoc_MaterialTool)& t, const TDF_Label& lab) -> bool {
+    return bool(t->IsMaterial(lab));
+  });
+  mod.method("XCAFDoc_MaterialTool_NbMaterials", [](const Handle(XCAFDoc_MaterialTool)& t) -> int {
+    NCollection_Sequence<TDF_Label> seq;
+    t->GetMaterialLabels(seq);
+    return seq.Length();
+  });
+  mod.method("XCAFDoc_MaterialTool_MaterialLabel",
+             [](const Handle(XCAFDoc_MaterialTool)& t, int i) -> TDF_Label {
+    NCollection_Sequence<TDF_Label> seq;
+    t->GetMaterialLabels(seq);
+    return (i < 1 || i > seq.Length()) ? TDF_Label() : seq.Value(i);
+  });
+  // GetMaterial is a single static call producing 5 out-params atomically; mirrors
+  // XCAFDimTolObjects_DimensionObject's per-field-accessor style (occ_dimtol.cpp) rather
+  // than returning a tuple -- each accessor re-invokes the call and keeps one field.
+  mod.method("XCAFDoc_MaterialTool_MaterialName",
+             [](const TDF_Label& matLabel) -> Handle(TCollection_HAsciiString) {
+    Handle(TCollection_HAsciiString) name, desc, densName, densValType;
+    double density = 0.0;
+    XCAFDoc_MaterialTool::GetMaterial(matLabel, name, desc, density, densName, densValType);
+    return name;
+  });
+  mod.method("XCAFDoc_MaterialTool_MaterialDescription",
+             [](const TDF_Label& matLabel) -> Handle(TCollection_HAsciiString) {
+    Handle(TCollection_HAsciiString) name, desc, densName, densValType;
+    double density = 0.0;
+    XCAFDoc_MaterialTool::GetMaterial(matLabel, name, desc, density, densName, densValType);
+    return desc;
+  });
+  mod.method("XCAFDoc_MaterialTool_MaterialDensity", [](const TDF_Label& matLabel) -> double {
+    Handle(TCollection_HAsciiString) name, desc, densName, densValType;
+    double density = 0.0;
+    XCAFDoc_MaterialTool::GetMaterial(matLabel, name, desc, density, densName, densValType);
+    return density;
+  });
+  mod.method("XCAFDoc_MaterialTool_MaterialDensityName",
+             [](const TDF_Label& matLabel) -> Handle(TCollection_HAsciiString) {
+    Handle(TCollection_HAsciiString) name, desc, densName, densValType;
+    double density = 0.0;
+    XCAFDoc_MaterialTool::GetMaterial(matLabel, name, desc, density, densName, densValType);
+    return densName;
+  });
+  mod.method("XCAFDoc_MaterialTool_MaterialDensityValType",
+             [](const TDF_Label& matLabel) -> Handle(TCollection_HAsciiString) {
+    Handle(TCollection_HAsciiString) name, desc, densName, densValType;
+    double density = 0.0;
+    XCAFDoc_MaterialTool::GetMaterial(matLabel, name, desc, density, densName, densValType);
+    return densValType;
+  });
+  mod.method("XCAFDoc_MaterialTool_GetDensityForShape", [](const TDF_Label& shapeLabel) -> double {
+    return XCAFDoc_MaterialTool::GetDensityForShape(shapeLabel);
+  });
+  // Minimal write-side (AddMaterial + link), added alongside the read-only slice above
+  // specifically so this binding can be verified with a real round trip rather than only
+  // an empty-document check -- full write-side GD&T-style authoring is still out of scope.
+  mod.method("XCAFDoc_MaterialTool_AddMaterial",
+             [](const Handle(XCAFDoc_MaterialTool)& t, const Handle(TCollection_HAsciiString)& name,
+                const Handle(TCollection_HAsciiString)& desc, double density,
+                const Handle(TCollection_HAsciiString)& densName,
+                const Handle(TCollection_HAsciiString)& densValType) -> TDF_Label {
+    return t->AddMaterial(name, desc, density, densName, densValType);
+  });
+  mod.method("XCAFDoc_MaterialTool_SetMaterial",
+             [](const Handle(XCAFDoc_MaterialTool)& t, const TDF_Label& shapeLabel,
+                const TDF_Label& matLabel) {
+    t->SetMaterial(shapeLabel, matLabel);
   });
 
   // The document's own declared length unit (meters per model unit) -- STEPCAFControl_Reader
