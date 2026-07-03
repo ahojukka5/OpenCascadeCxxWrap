@@ -67,6 +67,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_findplane.cpp
   src/occ_bintools.cpp
   src/occ_shapecustom.cpp
+  src/occ_dimtol.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
