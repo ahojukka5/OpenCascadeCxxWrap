@@ -13,6 +13,7 @@
 #include <GeomFill_BSplineCurves.hxx>
 #include <GeomFill_FillingStyle.hxx>
 #include <GeomFill_Generator.hxx>
+#include <GeomFill_Gordon.hxx>
 #include <GeomFill_Pipe.hxx>
 #include <GeomFill_PipeError.hxx>
 #include <Geom_BSplineCurve.hxx>
@@ -20,6 +21,24 @@
 #include <Geom_Curve.hxx>
 #include <Geom_Surface.hxx>
 #include <GeomAbs_Shape.hxx>
+#include <NCollection_Array1.hxx>
+
+#include <vector>
+
+namespace {
+  // GeomFill_Gordon::Init wants a fixed-bounds NCollection_Array1<Handle(Geom_Curve)>,
+  // an array-of-wrapped-handles marshaling need not proven elsewhere in this codebase.
+  // Rather than an unproven jlcxx::ArrayRef<Handle(T)> instantiation, this reuses the
+  // already-working "stateful builder object, Julia appends one element at a time"
+  // idiom GeomFill_Generator::AddCurve (below) already demonstrates in this exact file.
+  using GeomCurveVector = std::vector<Handle(Geom_Curve)>;
+
+  NCollection_Array1<Handle(Geom_Curve)> ArrayFromVector(const GeomCurveVector& v) {
+    NCollection_Array1<Handle(Geom_Curve)> arr(1, int(v.size()));
+    for (size_t i = 0; i < v.size(); ++i) arr.SetValue(int(i + 1), v[i]);
+    return arr;
+  }
+}
 
 namespace {
   // GeomFill_BSplineCurves needs Handle(Geom_BSplineCurve) specifically,
@@ -87,6 +106,25 @@ void register_occ_geomfill(jlcxx::Module& mod)
     occ_guard([&]{ g.Perform(tol); return 0; });
   });
   mod.method("Surface", [](const GeomFill_Generator& g) -> Handle(Geom_Surface) { return g.Surface(); });
+
+  // GeomFill_Gordon: N x M curve-network (transfinite interpolation) surface,
+  // generalizing GeomFill_BSplineCurves' fixed 2-4-boundary Coons patch above.
+  // Every profile must intersect every guide (OCCT's own documented constraint).
+  mod.add_type<GeomCurveVector>("GeomCurveArray").constructor<>();
+  mod.method("Append", [](GeomCurveVector& v, const Handle(Geom_Curve)& c) { v.push_back(c); });
+  mod.method("Extent", [](const GeomCurveVector& v) -> int { return int(v.size()); });
+
+  mod.add_type<GeomFill_Gordon>("GeomFill_Gordon").constructor<>();
+  mod.method("GeomFill_Gordon_Init",
+             [](GeomFill_Gordon& g, const GeomCurveVector& profiles, const GeomCurveVector& guides, double tol) {
+    occ_guard([&]{ g.Init(ArrayFromVector(profiles), ArrayFromVector(guides), tol); return 0; });
+  });
+  mod.method("Perform", [](GeomFill_Gordon& g) { occ_guard([&]{ g.Perform(); return 0; }); });
+  mod.method("IsDone", [](const GeomFill_Gordon& g) -> bool { return bool(g.IsDone()); });
+  mod.method("GeomFill_Gordon_Status", [](const GeomFill_Gordon& g) -> int {
+    return int(g.Status());
+  });
+  mod.method("Surface", [](const GeomFill_Gordon& g) -> Handle(Geom_Surface) { return g.Surface(); });
 
   mod.add_type<GeomFill_Pipe>("GeomFill_Pipe")
      .constructor<const Handle(Geom_Curve)&, double>()                                    // constant radius
