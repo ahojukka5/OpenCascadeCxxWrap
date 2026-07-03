@@ -131,6 +131,9 @@ void register_occ_gp(jlcxx::Module& mod) {
   mod.add_type<gp_Pln>("gp_Pln").constructor<>()
      .constructor<const gp_Pnt&, const gp_Dir&>()
      .constructor<const gp_Ax3&>();
+  mod.method("Axis",     [](const gp_Pln& p) -> gp_Ax1 { return p.Axis(); });
+  mod.method("Location", [](const gp_Pln& p) -> gp_Pnt { return p.Location(); });
+  mod.method("Position", [](const gp_Pln& p) -> gp_Ax3 { return p.Position(); });
   mod.add_type<gp_Elips>("gp_Elips").constructor<>()
      .constructor<const gp_Ax2&, double, double>();
   mod.method("MajorRadius", [](const gp_Elips& e) { return e.MajorRadius(); });
