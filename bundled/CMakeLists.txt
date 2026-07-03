@@ -49,6 +49,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_xcaf_material.cpp
   src/occ_igescaf.cpp
   src/occ_localanalysis.cpp
+  src/occ_gce.cpp
   src/occ_triangulation.cpp
   src/occ_interface_static.cpp
   src/occ_gltf.cpp
