@@ -12,6 +12,7 @@
 
 #include <GeomFill_BSplineCurves.hxx>
 #include <GeomFill_FillingStyle.hxx>
+#include <GeomFill_Generator.hxx>
 #include <GeomFill_Pipe.hxx>
 #include <GeomFill_PipeError.hxx>
 #include <Geom_BSplineCurve.hxx>
@@ -74,6 +75,18 @@ void register_occ_geomfill(jlcxx::Module& mod)
       return fill.Surface();
     });
   });
+
+  // GeomFill_Generator: plain ruled-surface-through-N-curves builder at
+  // the Geom_Surface level (distinct from BRepOffsetAPI_ThruSections,
+  // which operates on TopoDS_Wire and produces a solid/shell).
+  mod.add_type<GeomFill_Generator>("GeomFill_Generator").constructor<>();
+  mod.method("AddCurve", [](GeomFill_Generator& g, const Handle(Geom_Curve)& c) {
+    occ_guard([&]{ g.AddCurve(c); return 0; });
+  });
+  mod.method("Perform", [](GeomFill_Generator& g, double tol) {
+    occ_guard([&]{ g.Perform(tol); return 0; });
+  });
+  mod.method("Surface", [](const GeomFill_Generator& g) -> Handle(Geom_Surface) { return g.Surface(); });
 
   mod.add_type<GeomFill_Pipe>("GeomFill_Pipe")
      .constructor<const Handle(Geom_Curve)&, double>()                                    // constant radius
