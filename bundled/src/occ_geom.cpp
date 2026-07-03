@@ -23,6 +23,9 @@
 #include <GeomAPI_ProjectPointOnCurve.hxx>
 #include <GeomAPI_ProjectPointOnSurf.hxx>
 #include <GeomAPI_ExtremaCurveCurve.hxx>
+#include <GeomAPI_ExtremaSurfaceSurface.hxx>
+#include <GeomAPI_ExtremaCurveSurface.hxx>
+#include <GeomAPI_IntSS.hxx>
 #include <GeomAPI_Interpolate.hxx>
 
 #include <TColgp_Array1OfPnt.hxx>
@@ -312,4 +315,66 @@ void register_occ_geom(jlcxx::Module& mod) {
   mod.method("IsParallel", [](const GeomAPI_ExtremaCurveCurve& e) -> bool { return bool(e.IsParallel()); });
   mod.method("LowerDistance", [](const GeomAPI_ExtremaCurveCurve& e) -> double { return e.LowerDistance(); });
   mod.method("TotalLowerDistance", [](GeomAPI_ExtremaCurveCurve& e) -> double { return e.TotalLowerDistance(); });
+
+  // ---- Surface-surface extrema ----
+  mod.add_type<GeomAPI_ExtremaSurfaceSurface>("GeomAPI_ExtremaSurfaceSurface")
+     .constructor<const Handle(Geom_Surface)&, const Handle(Geom_Surface)&>();
+  mod.method("NbExtrema", [](const GeomAPI_ExtremaSurfaceSurface& e) -> int { return e.NbExtrema(); });
+  mod.method("Point1", [](const GeomAPI_ExtremaSurfaceSurface& e, int i) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.Points(i, p1, p2);
+    return p1;
+  });
+  mod.method("Point2", [](const GeomAPI_ExtremaSurfaceSurface& e, int i) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.Points(i, p1, p2);
+    return p2;
+  });
+  mod.method("Distance", [](const GeomAPI_ExtremaSurfaceSurface& e, int i) -> double { return e.Distance(i); });
+  mod.method("IsParallel", [](const GeomAPI_ExtremaSurfaceSurface& e) -> bool { return bool(e.IsParallel()); });
+  mod.method("NearestPoint1", [](const GeomAPI_ExtremaSurfaceSurface& e) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.NearestPoints(p1, p2);
+    return p1;
+  });
+  mod.method("NearestPoint2", [](const GeomAPI_ExtremaSurfaceSurface& e) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.NearestPoints(p1, p2);
+    return p2;
+  });
+  mod.method("LowerDistance", [](const GeomAPI_ExtremaSurfaceSurface& e) -> double { return e.LowerDistance(); });
+
+  // ---- Curve-surface extrema ----
+  mod.add_type<GeomAPI_ExtremaCurveSurface>("GeomAPI_ExtremaCurveSurface")
+     .constructor<const Handle(Geom_Curve)&, const Handle(Geom_Surface)&>();
+  mod.method("NbExtrema", [](const GeomAPI_ExtremaCurveSurface& e) -> int { return e.NbExtrema(); });
+  mod.method("Point1", [](const GeomAPI_ExtremaCurveSurface& e, int i) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.Points(i, p1, p2);
+    return p1;
+  });
+  mod.method("Point2", [](const GeomAPI_ExtremaCurveSurface& e, int i) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.Points(i, p1, p2);
+    return p2;
+  });
+  mod.method("Distance", [](const GeomAPI_ExtremaCurveSurface& e, int i) -> double { return e.Distance(i); });
+  mod.method("NearestPoint1", [](const GeomAPI_ExtremaCurveSurface& e) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.NearestPoints(p1, p2);
+    return p1;
+  });
+  mod.method("NearestPoint2", [](const GeomAPI_ExtremaCurveSurface& e) -> gp_Pnt {
+    gp_Pnt p1, p2;
+    e.NearestPoints(p1, p2);
+    return p2;
+  });
+  mod.method("LowerDistance", [](const GeomAPI_ExtremaCurveSurface& e) -> double { return e.LowerDistance(); });
+
+  // ---- Surface-surface intersection curves ----
+  mod.add_type<GeomAPI_IntSS>("GeomAPI_IntSS")
+     .constructor<const Handle(Geom_Surface)&, const Handle(Geom_Surface)&, double>();
+  mod.method("IsDone", [](const GeomAPI_IntSS& i) -> bool { return bool(i.IsDone()); });
+  mod.method("NbLines", [](const GeomAPI_IntSS& i) -> int { return i.NbLines(); });
+  mod.method("Line", [](const GeomAPI_IntSS& i, int idx) -> Handle(Geom_Curve) { return i.Line(idx); });
 }
