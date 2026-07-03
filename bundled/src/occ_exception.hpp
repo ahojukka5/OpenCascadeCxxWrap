@@ -26,8 +26,8 @@ auto occ_guard(F&& f) -> decltype(f()) {
   try {
     return f();
   } catch (const Standard_Failure& e) {
-    Standard_CString msg = e.GetMessageString();
-    std::string what = (msg && *msg) ? std::string(msg) : std::string(e.DynamicType()->Name());
+    const char* msg = e.what();
+    std::string what = (msg && *msg) ? std::string(msg) : std::string(e.ExceptionType());
     throw std::runtime_error(what);
   }
 }

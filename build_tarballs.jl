@@ -33,7 +33,7 @@ products = [
 ]
 
 dependencies = [
-    Dependency("OCCT_jll"; compat="7.9.3"),
+    Dependency("OCCT_jll"; compat="8.0.0"),
     Dependency("Zlib_jll"),
     Dependency("libcxxwrap_julia_jll"),
 ]

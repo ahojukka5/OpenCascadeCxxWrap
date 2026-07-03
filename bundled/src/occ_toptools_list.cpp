@@ -5,7 +5,6 @@
 #include <jlcxx/jlcxx.hpp>
 
 #include <TopTools_ListOfShape.hxx>
-#include <TopTools_ListIteratorOfListOfShape.hxx>
 #include <TopoDS_Shape.hxx>
 
 void register_occ_toptools_list(jlcxx::Module& mod) {
