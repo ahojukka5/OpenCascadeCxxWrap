@@ -39,6 +39,7 @@ void register_occ_helix(jlcxx::Module&);
 void register_occ_geom2d_int(jlcxx::Module&);
 void register_occ_xcaf_material(jlcxx::Module&);
 void register_occ_igescaf(jlcxx::Module&);
+void register_occ_localanalysis(jlcxx::Module&);
 void register_occ_triangulation(jlcxx::Module&);
 void register_occ_interface_static(jlcxx::Module&);
 void register_occ_gltf(jlcxx::Module&);
@@ -93,6 +94,7 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_geom2d_int(mod);
   register_occ_xcaf_material(mod);
   register_occ_igescaf(mod);
+  register_occ_localanalysis(mod);
   register_occ_interface_static(mod);
   register_occ_gltf(mod);
   register_occ_fill(mod);
