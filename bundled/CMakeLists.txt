@@ -45,6 +45,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_bopalgo_builder.cpp
   src/occ_feat_hole.cpp
   src/occ_helix.cpp
+  src/occ_geom2d_int.cpp
   src/occ_triangulation.cpp
   src/occ_interface_static.cpp
   src/occ_gltf.cpp
