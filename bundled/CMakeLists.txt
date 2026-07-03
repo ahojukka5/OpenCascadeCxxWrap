@@ -69,6 +69,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_shapecustom.cpp
   src/occ_dimtol.cpp
   src/occ_extrema2.cpp
+  src/occ_fillet2d.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
