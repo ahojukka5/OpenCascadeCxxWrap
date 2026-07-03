@@ -68,6 +68,8 @@
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Common.hxx>
 #include <BRepAlgoAPI_Section.hxx>
+#include <BOPAlgo_GlueEnum.hxx>
+#include <sstream>
 
 void register_occ_builders(jlcxx::Module& mod) {
   // ===== BRepPrimAPI: primitive solids ======================================
@@ -333,6 +335,18 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("SetArguments", [](BRepAlgoAPI_Fuse& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
   mod.method("SetTools",     [](BRepAlgoAPI_Fuse& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
   mod.method("SetFuzzyValue",[](BRepAlgoAPI_Fuse& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("SetGlue",      [](BRepAlgoAPI_Fuse& m, int glue) { m.SetGlue(BOPAlgo_GlueEnum(glue)); });
+  mod.method("SetNonDestructive", [](BRepAlgoAPI_Fuse& m, bool v) { m.SetNonDestructive(v); });
+  mod.method("SetCheckInverted",  [](BRepAlgoAPI_Fuse& m, bool v) { m.SetCheckInverted(v); });
+  mod.method("SetUseOBB",         [](BRepAlgoAPI_Fuse& m, bool v) { m.SetUseOBB(v); });
+  mod.method("HasErrors",   [](const BRepAlgoAPI_Fuse& m) -> bool { return bool(m.HasErrors()); });
+  mod.method("HasWarnings", [](const BRepAlgoAPI_Fuse& m) -> bool { return bool(m.HasWarnings()); });
+  mod.method("DumpErrors",  [](const BRepAlgoAPI_Fuse& m) -> std::string {
+    std::ostringstream out; m.DumpErrors(out); return out.str();
+  });
+  mod.method("DumpWarnings",[](const BRepAlgoAPI_Fuse& m) -> std::string {
+    std::ostringstream out; m.DumpWarnings(out); return out.str();
+  });
   mod.method("Build",        [](BRepAlgoAPI_Fuse& m) { m.Build(); });
 
   mod.add_type<BRepAlgoAPI_Cut>("BRepAlgoAPI_Cut")
@@ -352,6 +366,18 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("SetArguments", [](BRepAlgoAPI_Cut& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
   mod.method("SetTools",     [](BRepAlgoAPI_Cut& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
   mod.method("SetFuzzyValue",[](BRepAlgoAPI_Cut& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("SetGlue",      [](BRepAlgoAPI_Cut& m, int glue) { m.SetGlue(BOPAlgo_GlueEnum(glue)); });
+  mod.method("SetNonDestructive", [](BRepAlgoAPI_Cut& m, bool v) { m.SetNonDestructive(v); });
+  mod.method("SetCheckInverted",  [](BRepAlgoAPI_Cut& m, bool v) { m.SetCheckInverted(v); });
+  mod.method("SetUseOBB",         [](BRepAlgoAPI_Cut& m, bool v) { m.SetUseOBB(v); });
+  mod.method("HasErrors",   [](const BRepAlgoAPI_Cut& m) -> bool { return bool(m.HasErrors()); });
+  mod.method("HasWarnings", [](const BRepAlgoAPI_Cut& m) -> bool { return bool(m.HasWarnings()); });
+  mod.method("DumpErrors",  [](const BRepAlgoAPI_Cut& m) -> std::string {
+    std::ostringstream out; m.DumpErrors(out); return out.str();
+  });
+  mod.method("DumpWarnings",[](const BRepAlgoAPI_Cut& m) -> std::string {
+    std::ostringstream out; m.DumpWarnings(out); return out.str();
+  });
   mod.method("Build",        [](BRepAlgoAPI_Cut& m) { m.Build(); });
 
   mod.add_type<BRepAlgoAPI_Common>("BRepAlgoAPI_Common")
@@ -371,7 +397,23 @@ void register_occ_builders(jlcxx::Module& mod) {
   mod.method("SetArguments", [](BRepAlgoAPI_Common& m, const TopTools_ListOfShape& a) { m.SetArguments(a); });
   mod.method("SetTools",     [](BRepAlgoAPI_Common& m, const TopTools_ListOfShape& t) { m.SetTools(t); });
   mod.method("SetFuzzyValue",[](BRepAlgoAPI_Common& m, double v) { m.SetFuzzyValue(v); });
+  mod.method("SetGlue",      [](BRepAlgoAPI_Common& m, int glue) { m.SetGlue(BOPAlgo_GlueEnum(glue)); });
+  mod.method("SetNonDestructive", [](BRepAlgoAPI_Common& m, bool v) { m.SetNonDestructive(v); });
+  mod.method("SetCheckInverted",  [](BRepAlgoAPI_Common& m, bool v) { m.SetCheckInverted(v); });
+  mod.method("SetUseOBB",         [](BRepAlgoAPI_Common& m, bool v) { m.SetUseOBB(v); });
+  mod.method("HasErrors",   [](const BRepAlgoAPI_Common& m) -> bool { return bool(m.HasErrors()); });
+  mod.method("HasWarnings", [](const BRepAlgoAPI_Common& m) -> bool { return bool(m.HasWarnings()); });
+  mod.method("DumpErrors",  [](const BRepAlgoAPI_Common& m) -> std::string {
+    std::ostringstream out; m.DumpErrors(out); return out.str();
+  });
+  mod.method("DumpWarnings",[](const BRepAlgoAPI_Common& m) -> std::string {
+    std::ostringstream out; m.DumpWarnings(out); return out.str();
+  });
   mod.method("Build",        [](BRepAlgoAPI_Common& m) { m.Build(); });
+
+  mod.method("BOPAlgo_GlueOff",   []() { return int(BOPAlgo_GlueOff); });
+  mod.method("BOPAlgo_GlueShift", []() { return int(BOPAlgo_GlueShift); });
+  mod.method("BOPAlgo_GlueFull",  []() { return int(BOPAlgo_GlueFull); });
 
   mod.add_type<BRepAlgoAPI_Section>("BRepAlgoAPI_Section")
      .constructor<const TopoDS_Shape&, const TopoDS_Shape&>();
