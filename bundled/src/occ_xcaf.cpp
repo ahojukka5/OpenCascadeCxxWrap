@@ -253,6 +253,15 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.method("Transfer", [](STEPCAFControl_Reader& r, Handle(TDocStd_Document)& doc) {
     return bool(r.Transfer(doc));
   });
+  // Explicit transfer-mode control -- previously always ran with OCCT's
+  // compiled-in defaults (confirmed empirically to already transfer
+  // colors/names/layers correctly); these guarantee that behavior rather
+  // than leaving it to an undocumented default a future OCCT version could
+  // silently change, and let a caller opt out (e.g. skip color transfer).
+  mod.method("SetColorMode", [](STEPCAFControl_Reader& r, bool value) { r.SetColorMode(value); });
+  mod.method("SetNameMode",  [](STEPCAFControl_Reader& r, bool value) { r.SetNameMode(value); });
+  mod.method("SetLayerMode", [](STEPCAFControl_Reader& r, bool value) { r.SetLayerMode(value); });
+  mod.method("SetMatMode",   [](STEPCAFControl_Reader& r, bool value) { r.SetMatMode(value); });
 
   mod.add_type<STEPCAFControl_Writer>("STEPCAFControl_Writer").constructor<>();
   mod.method("Transfer", [](STEPCAFControl_Writer& w, Handle(TDocStd_Document)& doc, int mode) {
@@ -261,6 +270,10 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.method("Write", [](STEPCAFControl_Writer& w, const std::string& f) {
     return int(w.Write(f.c_str()));
   });
+  mod.method("SetColorMode",    [](STEPCAFControl_Writer& w, bool value) { w.SetColorMode(value); });
+  mod.method("SetNameMode",     [](STEPCAFControl_Writer& w, bool value) { w.SetNameMode(value); });
+  mod.method("SetLayerMode",    [](STEPCAFControl_Writer& w, bool value) { w.SetLayerMode(value); });
+  mod.method("SetMaterialMode", [](STEPCAFControl_Writer& w, bool value) { w.SetMaterialMode(value); });
 
   mod.method("Quantity_TOC_RGB", []() { return int(Quantity_TOC_RGB); });
   mod.method("XCAFDoc_ColorGen", []() { return int(XCAFDoc_ColorGen); });
