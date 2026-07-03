@@ -27,6 +27,7 @@
 #include <GeomAPI_ExtremaCurveSurface.hxx>
 #include <GeomAPI_IntSS.hxx>
 #include <GeomAPI_Interpolate.hxx>
+#include <GeomAPI_PointsToBSplineSurface.hxx>
 
 #include <TColgp_Array1OfPnt.hxx>
 #include <TColgp_Array2OfPnt.hxx>
@@ -265,6 +266,17 @@ void register_occ_geom(jlcxx::Module& mod) {
     TColgp_Array1OfPnt p = PolesFromFlat(points);
     GeomAPI_PointsToBSpline fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
     return fitter.Curve();
+  });
+
+  // ---- Surface fitting through a grid of points (2D analogue of the curve
+  // fitter above; reuses the same PolesFromFlat2D helper already proven for
+  // Geom_BSplineSurface's rational/non-rational constructors below) ----
+  mod.method("GeomAPI_PointsToBSplineSurface",
+             [](jlcxx::ArrayRef<double> pointsFlat, int nu, int nv, int degMin, int degMax,
+                int continuity, double tol3d) -> Handle(Geom_Surface) {
+    TColgp_Array2OfPnt p = PolesFromFlat2D(pointsFlat, nu, nv);
+    GeomAPI_PointsToBSplineSurface fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
+    return fitter.Surface();
   });
 
   // ---- Curve interpolation (point-only constraints; tangent-vector Load()
