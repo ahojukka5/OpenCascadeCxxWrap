@@ -42,6 +42,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_xcaf.cpp
   src/occ_history.cpp
   src/occ_bopalgo_analyzer.cpp
+  src/occ_bopalgo_builder.cpp
   src/occ_triangulation.cpp
   src/occ_interface_static.cpp
   src/occ_gltf.cpp
