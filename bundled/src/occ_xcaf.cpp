@@ -26,10 +26,14 @@
 #include <TDF_LabelSequence.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <Standard_Type.hxx>
+#include <NCollection_Map.hxx>
 
 void register_occ_xcaf(jlcxx::Module& mod) {
   mod.add_type<TDF_Label>("TDF_Label");
   mod.method("TDF_Label_IsNull", [](const TDF_Label& label) -> bool { return label.IsNull(); });
+  mod.method("TDF_Label_IsEqual", [](const TDF_Label& a, const TDF_Label& b) -> bool {
+    return a.IsEqual(b);
+  });
   mod.add_type<XCAFApp_Application>("XCAFApp_Application");
   mod.add_type<TDocStd_Document>("TDocStd_Document");
   mod.add_type<XCAFDoc_ShapeTool>("XCAFDoc_ShapeTool");
@@ -434,5 +438,65 @@ void register_occ_xcaf(jlcxx::Module& mod) {
   mod.method("XCAFDoc_Editor_ExpandShape",
              [](const TDF_Label& doc, const TDF_Label& shape, bool recursively) -> bool {
     return bool(XCAFDoc_Editor::Expand(doc, shape, recursively));
+  });
+
+  // TDF_LabelSequence: exposed here (not just used internally like above) so
+  // Julia can build a multi-label input for XCAFDoc_Editor_ExtractSeq --
+  // same idiom as TopTools_ListOfShape in occ_toptools_list.cpp.
+  mod.add_type<TDF_LabelSequence>("TDF_LabelSequence").constructor<>();
+  mod.method("Append", [](TDF_LabelSequence& seq, const TDF_Label& l) { seq.Append(l); });
+  mod.method("TDF_LabelSequence_Length", [](const TDF_LabelSequence& seq) -> int {
+    return seq.Length();
+  });
+  mod.method("TDF_LabelSequence_Value", [](const TDF_LabelSequence& seq, int index) -> TDF_Label {
+    if (index < 1 || index > seq.Length()) return TDF_Label();
+    return seq.Value(index);
+  });
+
+  mod.method("XCAFDoc_Editor_Extract",
+             [](const TDF_Label& srcLabel, const TDF_Label& dstLabel, bool isNoVisMat) -> bool {
+    return bool(XCAFDoc_Editor::Extract(srcLabel, dstLabel, isNoVisMat));
+  });
+  mod.method("XCAFDoc_Editor_ExtractSeq",
+             [](const TDF_LabelSequence& srcLabels, const TDF_Label& dstLabel, bool isNoVisMat) -> bool {
+    return bool(XCAFDoc_Editor::Extract(srcLabels, dstLabel, isNoVisMat));
+  });
+
+  // GetParentShapeLabels/GetChildShapeLabels: same Count/Get-via-recompute
+  // idiom as XCAFDoc_UserCount/UserLabel above, but the underlying OCCT call
+  // fills an NCollection_Map<TDF_Label> (not a Sequence) -- iterated once
+  // per call to translate to 1-based indexed access. Two independent calls
+  // with the same input label always rebuild the same map contents, so the
+  // Map's internal (hash-order) iteration order is consistent across the
+  // paired Count/Get calls.
+  mod.method("XCAFDoc_Editor_ParentShapeLabelCount", [](const TDF_Label& label) -> int {
+    NCollection_Map<TDF_Label> related;
+    XCAFDoc_Editor::GetParentShapeLabels(label, related);
+    return related.Extent();
+  });
+  mod.method("XCAFDoc_Editor_ParentShapeLabel", [](const TDF_Label& label, int index) -> TDF_Label {
+    NCollection_Map<TDF_Label> related;
+    XCAFDoc_Editor::GetParentShapeLabels(label, related);
+    if (index < 1 || index > related.Extent()) return TDF_Label();
+    int i = 0;
+    for (NCollection_Map<TDF_Label>::Iterator it(related); it.More(); it.Next()) {
+      if (++i == index) return it.Value();
+    }
+    return TDF_Label();
+  });
+  mod.method("XCAFDoc_Editor_ChildShapeLabelCount", [](const TDF_Label& label) -> int {
+    NCollection_Map<TDF_Label> related;
+    XCAFDoc_Editor::GetChildShapeLabels(label, related);
+    return related.Extent();
+  });
+  mod.method("XCAFDoc_Editor_ChildShapeLabel", [](const TDF_Label& label, int index) -> TDF_Label {
+    NCollection_Map<TDF_Label> related;
+    XCAFDoc_Editor::GetChildShapeLabels(label, related);
+    if (index < 1 || index > related.Extent()) return TDF_Label();
+    int i = 0;
+    for (NCollection_Map<TDF_Label>::Iterator it(related); it.More(); it.Next()) {
+      if (++i == index) return it.Value();
+    }
+    return TDF_Label();
   });
 }
