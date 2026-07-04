@@ -62,6 +62,7 @@ void register_occ_dimtol(jlcxx::Module&);
 void register_occ_extrema2(jlcxx::Module&);
 void register_occ_fillet2d(jlcxx::Module&);
 void register_occ_bopalgo_connected(jlcxx::Module&);
+void register_occ_xcafview(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
@@ -127,4 +128,5 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_extrema2(mod);
   register_occ_fillet2d(mod);
   register_occ_bopalgo_connected(mod);
+  register_occ_xcafview(mod);
 }
