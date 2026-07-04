@@ -15,6 +15,7 @@
 #include <jlcxx/jlcxx.hpp>
 
 #include <RWObj_CafWriter.hxx>
+#include <RWObj_CafReader.hxx>
 #include <TDocStd_Document.hxx>
 #include <TCollection_AsciiString.hxx>
 #include <TColStd_IndexedDataMapOfStringString.hxx>
@@ -31,4 +32,23 @@ void register_occ_robj(jlcxx::Module& mod) {
     Message_ProgressRange progress;
     return bool(w.Perform(doc, fileInfo, progress));
   });
+
+  // RWObj_CafReader: OBJ *import* into an XCAF document -- until now
+  // occ_robj.cpp only had the writer. Standard_Transient-derived like
+  // RWObj_CafWriter above, same "no Handle needed" reasoning (nothing
+  // downstream holds a Handle(RWObj_CafReader)) -- but unlike the writer's
+  // 1-arg constructor, an explicit 0-arg .constructor() lambda here
+  // double-registers against jlcxx's own auto-generated default
+  // constructor (RWObj_CafReader has a public default ctor), so this
+  // relies on that implicit one instead of adding a redundant explicit one.
+  mod.add_type<RWObj_CafReader>("RWObj_CafReader");
+  mod.method("SetDocument", [](RWObj_CafReader& r, const Handle(TDocStd_Document)& doc) {
+    r.SetDocument(doc);
+  });
+  mod.method("Perform", [](RWObj_CafReader& r, const std::string& file) -> bool {
+    Message_ProgressRange progress;
+    return bool(r.Perform(TCollection_AsciiString(file.c_str()), progress));
+  });
+  mod.method("SetSinglePrecision", [](RWObj_CafReader& r, bool v) { r.SetSinglePrecision(v); });
+  mod.method("IsSinglePrecision", [](const RWObj_CafReader& r) -> bool { return r.IsSinglePrecision(); });
 }
