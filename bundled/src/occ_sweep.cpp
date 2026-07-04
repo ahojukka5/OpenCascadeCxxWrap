@@ -9,6 +9,8 @@
 #include <BRepOffsetAPI_MakeEvolved.hxx>
 #include <BRepBuilderAPI_TransitionMode.hxx>
 #include <GeomAbs_JoinType.hxx>
+#include <GeomAbs_Shape.hxx>
+#include <Approx_ParametrizationType.hxx>
 #include <TopoDS_Wire.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Face.hxx>
@@ -142,6 +144,29 @@ void register_occ_sweep(jlcxx::Module& mod)
   mod.method("IsDeleted", [](BRepOffsetAPI_ThruSections& m, const TopoDS_Shape& s) -> bool {
     return bool(m.IsDeleted(s));
   });
+
+  // Tuning knobs beyond the constructor's isSolid/ruled flags -- SetMaxDegree
+  // in particular matters for STEP-export compatibility (some downstream CAD
+  // tools reject high-degree NURBS lofts).
+  mod.method("SetMaxDegree", [](BRepOffsetAPI_ThruSections& t, int maxDeg) { t.SetMaxDegree(maxDeg); });
+  mod.method("SetContinuity", [](BRepOffsetAPI_ThruSections& t, int order) {
+    t.SetContinuity(GeomAbs_Shape(order));
+  });
+  mod.method("SetParType", [](BRepOffsetAPI_ThruSections& t, int parType) {
+    t.SetParType(Approx_ParametrizationType(parType));
+  });
+  mod.method("SetSmoothing", [](BRepOffsetAPI_ThruSections& t, bool useSmoothing) {
+    t.SetSmoothing(useSmoothing);
+  });
+  mod.method("SetCriteriumWeight", [](BRepOffsetAPI_ThruSections& t, double w1, double w2, double w3) {
+    t.SetCriteriumWeight(w1, w2, w3);
+  });
+  mod.method("FirstShape", [](const BRepOffsetAPI_ThruSections& t) -> TopoDS_Shape { return t.FirstShape(); });
+  mod.method("LastShape", [](const BRepOffsetAPI_ThruSections& t) -> TopoDS_Shape { return t.LastShape(); });
+
+  mod.method("Approx_ChordLength", []() { return int(Approx_ChordLength); });
+  mod.method("Approx_Centripetal", []() { return int(Approx_Centripetal); });
+  mod.method("Approx_IsoParametric", []() { return int(Approx_IsoParametric); });
 
   // --- BRepOffsetAPI_MakeOffsetShape methods ---
 
