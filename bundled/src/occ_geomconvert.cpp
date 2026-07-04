@@ -27,6 +27,8 @@
 #include <GeomConvert_CurveToAnaCurve.hxx>
 #include <GeomConvert_SurfToAnaSurf.hxx>
 #include <GeomConvert_CompCurveToBSplineCurve.hxx>
+#include <GeomConvert_ApproxCurve.hxx>
+#include <GeomConvert_ApproxSurface.hxx>
 #include <Geom_Curve.hxx>
 #include <Geom_BoundedCurve.hxx>
 #include <Geom_Surface.hxx>
@@ -286,4 +288,38 @@ void register_occ_geomconvert(jlcxx::Module& mod)
     return c.BSplineCurve();
   });
   mod.method("Clear", [](GeomConvert_CompCurveToBSplineCurve& c) { c.Clear(); });
+
+  // ---- Tolerance-based approximation (Round 31) ----
+  // Distinct from the exact analytic<->BSpline conversions above: these
+  // approximate an ARBITRARY curve/surface (not just directly-convertible
+  // conics) to a BSpline within a given tolerance/degree/segment budget --
+  // fills the gap next to the already-bound exact-fit GeomAPI/GeomPlate
+  // fitters for the "I don't need exact, just close enough" case. Scoped to
+  // the Handle(Geom_Curve)/(Geom_Surface) constructors only (skipping the
+  // Handle(Adaptor3d_Curve)/(Adaptor3d_Surface) overloads -- every curve/
+  // surface already reaching Julia arrives as the former).
+  mod.add_type<GeomConvert_ApproxCurve>("GeomConvert_ApproxCurve")
+     .constructor([](const Handle(Geom_Curve)& curve, double tol3d, int order,
+                      int maxSegments, int maxDegree) -> GeomConvert_ApproxCurve* {
+       return occ_guard([&]{
+         return new GeomConvert_ApproxCurve(curve, tol3d, GeomAbs_Shape(order), maxSegments, maxDegree);
+       });
+     });
+  mod.method("Curve", [](const GeomConvert_ApproxCurve& a) -> Handle(Geom_BSplineCurve) { return a.Curve(); });
+  mod.method("IsDone", [](const GeomConvert_ApproxCurve& a) -> bool { return bool(a.IsDone()); });
+  mod.method("HasResult", [](const GeomConvert_ApproxCurve& a) -> bool { return bool(a.HasResult()); });
+  mod.method("MaxError", [](const GeomConvert_ApproxCurve& a) -> double { return a.MaxError(); });
+
+  mod.add_type<GeomConvert_ApproxSurface>("GeomConvert_ApproxSurface")
+     .constructor([](const Handle(Geom_Surface)& surf, double tol3d, int uContinuity, int vContinuity,
+                      int maxDegU, int maxDegV, int maxSegments, int precisCode) -> GeomConvert_ApproxSurface* {
+       return occ_guard([&]{
+         return new GeomConvert_ApproxSurface(surf, tol3d, GeomAbs_Shape(uContinuity), GeomAbs_Shape(vContinuity),
+                                               maxDegU, maxDegV, maxSegments, precisCode);
+       });
+     });
+  mod.method("Surface", [](const GeomConvert_ApproxSurface& a) -> Handle(Geom_BSplineSurface) { return a.Surface(); });
+  mod.method("IsDone", [](const GeomConvert_ApproxSurface& a) -> bool { return bool(a.IsDone()); });
+  mod.method("HasResult", [](const GeomConvert_ApproxSurface& a) -> bool { return bool(a.HasResult()); });
+  mod.method("MaxError", [](const GeomConvert_ApproxSurface& a) -> double { return a.MaxError(); });
 }
