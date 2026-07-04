@@ -1,9 +1,12 @@
-// occ_adaptor.cpp — 1:1 CxxWrap bindings for BRepAdaptor_Curve and BRepAdaptor_Surface.
+// occ_adaptor.cpp — 1:1 CxxWrap bindings for BRepAdaptor_Curve, BRepAdaptor_Surface,
+// and BRepAdaptor_CompCurve.
 #include <jlcxx/jlcxx.hpp>
 #include <BRepAdaptor_Curve.hxx>
 #include <BRepAdaptor_Surface.hxx>
+#include <BRepAdaptor_CompCurve.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Wire.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Vec.hxx>
 #include <gp_Dir.hxx>
@@ -23,6 +26,12 @@ void register_occ_adaptor(jlcxx::Module& mod) {
   mod.add_type<BRepAdaptor_Surface>("BRepAdaptor_Surface")
      .constructor<>()
      .constructor<const TopoDS_Face&>();
+
+  mod.add_type<BRepAdaptor_CompCurve>("BRepAdaptor_CompCurve")
+     .constructor<>()
+     .constructor<const TopoDS_Wire&>()
+     .constructor<const TopoDS_Wire&, bool>()
+     .constructor<const TopoDS_Wire&, bool, double, double, double>();
 
   // BRepAdaptor_Curve methods
   mod.method("FirstParameter", [](const BRepAdaptor_Curve& c) -> double {
@@ -105,4 +114,35 @@ void register_occ_adaptor(jlcxx::Module& mod) {
   mod.method("GeomAbs_SurfaceOfExtrusion", []() { return int(GeomAbs_SurfaceOfExtrusion); });
   mod.method("GeomAbs_OffsetSurface",      []() { return int(GeomAbs_OffsetSurface); });
   mod.method("GeomAbs_OtherSurface",       []() { return int(GeomAbs_OtherSurface); });
+
+  // BRepAdaptor_CompCurve methods -- treats a whole (non-periodic) multi-edge
+  // wire as one continuous parametrized curve. Value/D0/D1/D2 are inherited,
+  // non-virtual Adaptor3d_Curve base members (they just call EvalD0/EvalD1/...
+  // underneath) so the exact same overload names already bound for
+  // BRepAdaptor_Curve above dispatch correctly here too.
+  mod.method("Initialize", [](BRepAdaptor_CompCurve& c, const TopoDS_Wire& w, bool knotByCurvilinearAbcissa) {
+    c.Initialize(w, knotByCurvilinearAbcissa);
+  });
+  mod.method("Initialize", [](BRepAdaptor_CompCurve& c, const TopoDS_Wire& w, bool knotByCurvilinearAbcissa,
+                               double first, double last, double tol) {
+    c.Initialize(w, knotByCurvilinearAbcissa, first, last, tol);
+  });
+  mod.method("Wire", [](const BRepAdaptor_CompCurve& c) -> TopoDS_Wire { return c.Wire(); });
+  mod.method("Edge", [](const BRepAdaptor_CompCurve& c, double u, TopoDS_Edge& e, double& uOnE) {
+    c.Edge(u, e, uOnE);
+  });
+  mod.method("FirstParameter", [](const BRepAdaptor_CompCurve& c) -> double { return c.FirstParameter(); });
+  mod.method("LastParameter", [](const BRepAdaptor_CompCurve& c) -> double { return c.LastParameter(); });
+  mod.method("IsClosed", [](const BRepAdaptor_CompCurve& c) -> bool { return c.IsClosed(); });
+  mod.method("IsPeriodic", [](const BRepAdaptor_CompCurve& c) -> bool { return c.IsPeriodic(); });
+  mod.method("Value", [](const BRepAdaptor_CompCurve& c, double t) -> gp_Pnt { return c.Value(t); });
+  mod.method("D0", [](const BRepAdaptor_CompCurve& c, double t, gp_Pnt& p) { c.D0(t, p); });
+  mod.method("D1", [](const BRepAdaptor_CompCurve& c, double t, gp_Pnt& p, gp_Vec& v) { c.D1(t, p, v); });
+  mod.method("D2", [](const BRepAdaptor_CompCurve& c, double t, gp_Pnt& p, gp_Vec& v1, gp_Vec& v2) {
+    c.D2(t, p, v1, v2);
+  });
+  mod.method("GetType", [](const BRepAdaptor_CompCurve& c) -> int { return int(c.GetType()); });
+  mod.method("Continuity", [](const BRepAdaptor_CompCurve& c) -> int { return int(c.Continuity()); });
+  mod.method("Degree", [](const BRepAdaptor_CompCurve& c) -> int { return c.Degree(); });
+  mod.method("IsRational", [](const BRepAdaptor_CompCurve& c) -> bool { return c.IsRational(); });
 }
