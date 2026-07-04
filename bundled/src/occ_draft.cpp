@@ -1,9 +1,19 @@
-// occ_draft.cpp — 1:1 CxxWrap bindings for BRepOffsetAPI_DraftAngle.
+// occ_draft.cpp — 1:1 CxxWrap bindings for BRepOffsetAPI_DraftAngle and
+// BRepOffsetAPI_MakeDraft. Not to be confused with each other:
+// DraftAngle drafts faces of an *existing* solid; MakeDraft builds a new
+// draft/taper *shell* from a profile wire toward a limiting length,
+// surface, or stop-shape (mold/die/casting draft-face generation).
+#include "occ_handle_traits.hpp"
 #include <jlcxx/jlcxx.hpp>
+#include "occ_exception.hpp"
 
 #include <BRepOffsetAPI_DraftAngle.hxx>
+#include <BRepOffsetAPI_MakeDraft.hxx>
+#include <BRepBuilderAPI_TransitionMode.hxx>
+#include <Geom_Surface.hxx>
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Face.hxx>
+#include <TopoDS_Shell.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Pln.hxx>
@@ -30,5 +40,29 @@ void register_occ_draft(jlcxx::Module& mod) {
   });
   mod.method("IsDeleted", [](BRepOffsetAPI_DraftAngle& m, const TopoDS_Shape& s) -> bool {
     return bool(m.IsDeleted(s));
+  });
+
+  // ---- BRepOffsetAPI_MakeDraft ----
+  mod.add_type<BRepOffsetAPI_MakeDraft>("BRepOffsetAPI_MakeDraft")
+     .constructor([](const TopoDS_Shape& shape, const gp_Dir& dir, double angle) -> BRepOffsetAPI_MakeDraft* {
+       return occ_guard([&]{ return new BRepOffsetAPI_MakeDraft(shape, dir, angle); });
+     });
+  mod.method("SetOptions", [](BRepOffsetAPI_MakeDraft& m, int style, double angleMin, double angleMax) {
+    m.SetOptions(BRepBuilderAPI_TransitionMode(style), angleMin, angleMax);
+  });
+  mod.method("SetDraft", [](BRepOffsetAPI_MakeDraft& m, bool isInternal) { m.SetDraft(isInternal); });
+  mod.method("Perform", [](BRepOffsetAPI_MakeDraft& m, double lengthMax) {
+    occ_guard([&]{ m.Perform(lengthMax); return 0; });
+  });
+  mod.method("Perform", [](BRepOffsetAPI_MakeDraft& m, const Handle(Geom_Surface)& surf, bool keepInsideSurface) {
+    occ_guard([&]{ m.Perform(surf, keepInsideSurface); return 0; });
+  });
+  mod.method("Perform", [](BRepOffsetAPI_MakeDraft& m, const TopoDS_Shape& stopShape, bool keepOutSide) {
+    occ_guard([&]{ m.Perform(stopShape, keepOutSide); return 0; });
+  });
+  mod.method("Shell", [](const BRepOffsetAPI_MakeDraft& m) -> TopoDS_Shell { return m.Shell(); });
+  mod.method("Shape", [](BRepOffsetAPI_MakeDraft& m) -> TopoDS_Shape { return m.Shape(); });
+  mod.method("Generated", [](BRepOffsetAPI_MakeDraft& m, const TopoDS_Shape& s) -> TopTools_ListOfShape {
+    return m.Generated(s);
   });
 }
