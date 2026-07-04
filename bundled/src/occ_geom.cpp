@@ -15,6 +15,9 @@
 #include <Geom_BSplineCurve.hxx>
 #include <Geom_BezierCurve.hxx>
 #include <Geom_Plane.hxx>
+#include <Geom_Circle.hxx>
+#include <Geom_Ellipse.hxx>
+#include <Geom_Line.hxx>
 #include <Geom_OffsetCurve.hxx>
 #include <Geom_OffsetSurface.hxx>
 #include <Geom_CylindricalSurface.hxx>
@@ -123,6 +126,13 @@ void register_occ_geom(jlcxx::Module& mod) {
 
   mod.add_type<Geom_Curve>("Geom_Curve");
   mod.add_type<Geom_Surface>("Geom_Surface");
+  // Several factory-style methods (GeomConvert_CurveToAnaCurve::ComputeCircle/
+  // ComputeEllipse, GeomConvert_SurfToAnaSurf::ConvertToAnalytical, ...)
+  // document returning a null Handle(Geom_Curve)/(Geom_Surface) on failure
+  // rather than throwing -- previously uncheckable from Julia at all for
+  // these two abstract base handle types.
+  mod.method("IsNull", [](const Handle(Geom_Curve)& c) -> bool { return c.IsNull(); });
+  mod.method("IsNull", [](const Handle(Geom_Surface)& s) -> bool { return s.IsNull(); });
 
   // ---- Geom_Curve ----
   mod.method("Value", [](const Handle(Geom_Curve)& c, double u) -> gp_Pnt { return c->Value(u); });
@@ -243,6 +253,19 @@ void register_occ_geom(jlcxx::Module& mod) {
   // ---- Analytic surface factories ----
   mod.method("Geom_Plane", [](const gp_Ax3& ax) -> Handle(Geom_Surface) { return new Geom_Plane(ax); });
   mod.method("Geom_Plane", [](const gp_Pln& pln) -> Handle(Geom_Surface) { return new Geom_Plane(pln); });
+  // Analytic curve factories, matching Geom_Plane's factory-function-only
+  // idiom (Geom_Circle/Geom_Ellipse/Geom_Line are never add_type'd
+  // directly, only ever received/constructed as upcasted Handle(Geom_Curve)) --
+  // previously only reachable as an already-existing edge/wire's underlying
+  // curve via BRep_Tool_Curve, never directly constructible.
+  mod.method("Geom_Circle", [](const gp_Circ& c) -> Handle(Geom_Curve) { return new Geom_Circle(c); });
+  mod.method("Geom_Circle", [](const gp_Ax2& ax, double r) -> Handle(Geom_Curve) { return new Geom_Circle(ax, r); });
+  mod.method("Geom_Ellipse", [](const gp_Elips& e) -> Handle(Geom_Curve) { return new Geom_Ellipse(e); });
+  mod.method("Geom_Ellipse", [](const gp_Ax2& ax, double majorR, double minorR) -> Handle(Geom_Curve) {
+    return occ_guard([&]{ return new Geom_Ellipse(ax, majorR, minorR); });
+  });
+  mod.method("Geom_Line", [](const gp_Lin& l) -> Handle(Geom_Curve) { return new Geom_Line(l); });
+  mod.method("Geom_Line", [](const gp_Ax1& ax) -> Handle(Geom_Curve) { return new Geom_Line(ax); });
   mod.method("Geom_CylindricalSurface", [](const gp_Ax3& ax, double r) -> Handle(Geom_Surface) {
     return new Geom_CylindricalSurface(ax, r);
   });

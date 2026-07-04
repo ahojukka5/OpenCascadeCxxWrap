@@ -24,7 +24,11 @@
 #include <GeomConvert.hxx>
 #include <GeomConvert_BSplineSurfaceToBezierSurface.hxx>
 #include <GeomConvert_BSplineCurveToBezierCurve.hxx>
+#include <GeomConvert_CurveToAnaCurve.hxx>
+#include <GeomConvert_SurfToAnaSurf.hxx>
+#include <GeomConvert_CompCurveToBSplineCurve.hxx>
 #include <Geom_Curve.hxx>
+#include <Geom_BoundedCurve.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_RectangularTrimmedSurface.hxx>
 #include <Geom_TrimmedCurve.hxx>
@@ -101,6 +105,21 @@ void register_occ_geomconvert(jlcxx::Module& mod)
   mod.add_type<Geom_BSplineCurve>("Geom_BSplineCurve");
   mod.add_type<Geom_BezierSurface>("Geom_BezierSurface");
   mod.add_type<Geom_BezierCurve>("Geom_BezierCurve");
+
+  // Explicit upcasts: jlcxx has no implicit Handle(Derived) -> Handle(Base)
+  // conversion at the Julia dispatch layer for these two concrete types
+  // (registered standalone above, not via julia_base_type<Geom_Curve/
+  // Surface>(), since callers need their concrete accessors too) -- needed
+  // to feed a Handle(Geom_BSplineCurve)/(Geom_BSplineSurface) result (e.g.
+  // from GeomConvert_CurveToBSplineCurve) into any Handle(Geom_Curve)/
+  // (Geom_Surface)-typed signature, such as GeomConvert_CurveToAnaCurve's
+  // constructor below.
+  mod.method("Geom_BSplineCurve_AsCurve", [](const Handle(Geom_BSplineCurve)& c) -> Handle(Geom_Curve) {
+    return c;
+  });
+  mod.method("Geom_BSplineSurface_AsSurface", [](const Handle(Geom_BSplineSurface)& s) -> Handle(Geom_Surface) {
+    return s;
+  });
 
   // A raw Geom_Surface/Geom_Curve pulled off a Face/Edge via BRep_Tool
   // (e.g. a planar face's Geom_Plane, a straight edge's Geom_Line) is the
@@ -191,4 +210,80 @@ void register_occ_geomconvert(jlcxx::Module& mod)
   });
   mod.method("NbPoles", [](const Handle(Geom_BezierCurve)& c) -> int { return c->NbPoles(); });
   mod.method("Poles", [](const Handle(Geom_BezierCurve)& c) -> std::vector<double> { return FlattenPoles1D(c->Poles()); });
+
+  // ---- Geometry simplification: analytic-form recovery (Round 30) ----
+  // The inverse of the analytic->BSpline conversion above: detects and
+  // converts a BSpline/Bezier curve/surface back to its exact analytic
+  // form (line/circle/ellipse; plane/cylinder/cone/sphere/torus) within
+  // tolerance -- valuable for cleaning up STEP imports where an exporting
+  // tool needlessly tessellated a clean primitive into NURBS. None of the
+  // three classes below derive from Standard_Transient (plain classes, no
+  // Handle-factory needed), same idiom as BOPAlgo_MakeConnected.
+  mod.add_type<GeomConvert_CurveToAnaCurve>("GeomConvert_CurveToAnaCurve")
+     .constructor<>()
+     .constructor<const Handle(Geom_Curve)&>();
+  mod.method("Init", [](GeomConvert_CurveToAnaCurve& c, const Handle(Geom_Curve)& curve) { c.Init(curve); });
+  mod.method("ConvertToAnalytical", [](GeomConvert_CurveToAnaCurve& c, double tol, double f, double l) {
+    Handle(Geom_Curve) result;
+    double newF = 0.0, newL = 0.0;
+    bool ok = occ_guard([&]{ return c.ConvertToAnalytical(tol, result, f, l, newF, newL); });
+    return std::make_tuple(ok, result, newF, newL);
+  });
+  mod.method("Gap", [](const GeomConvert_CurveToAnaCurve& c) -> double { return c.Gap(); });
+  mod.method("GeomConvert_CurveToAnaCurve_ComputeCircle",
+             [](const Handle(Geom_Curve)& curve, double tol, double c1, double c2) {
+    double cf = 0.0, cl = 0.0, deviation = 0.0;
+    Handle(Geom_Curve) result = occ_guard([&]{
+      return GeomConvert_CurveToAnaCurve::ComputeCircle(curve, tol, c1, c2, cf, cl, deviation);
+    });
+    return std::make_tuple(result, cf, cl, deviation);
+  });
+  mod.method("GeomConvert_CurveToAnaCurve_ComputeEllipse",
+             [](const Handle(Geom_Curve)& curve, double tol, double c1, double c2) {
+    double cf = 0.0, cl = 0.0, deviation = 0.0;
+    Handle(Geom_Curve) result = occ_guard([&]{
+      return GeomConvert_CurveToAnaCurve::ComputeEllipse(curve, tol, c1, c2, cf, cl, deviation);
+    });
+    return std::make_tuple(result, cf, cl, deviation);
+  });
+
+  mod.add_type<GeomConvert_SurfToAnaSurf>("GeomConvert_SurfToAnaSurf")
+     .constructor<>()
+     .constructor<const Handle(Geom_Surface)&>();
+  mod.method("Init", [](GeomConvert_SurfToAnaSurf& s, const Handle(Geom_Surface)& surf) { s.Init(surf); });
+  mod.method("ConvertToAnalytical", [](GeomConvert_SurfToAnaSurf& s, double tol) -> Handle(Geom_Surface) {
+    return occ_guard([&]{ return s.ConvertToAnalytical(tol); });
+  });
+  mod.method("ConvertToAnalytical", [](GeomConvert_SurfToAnaSurf& s, double tol,
+                                        double umin, double umax, double vmin, double vmax) -> Handle(Geom_Surface) {
+    return occ_guard([&]{ return s.ConvertToAnalytical(tol, umin, umax, vmin, vmax); });
+  });
+  mod.method("Gap", [](const GeomConvert_SurfToAnaSurf& s) -> double { return s.Gap(); });
+  mod.method("GeomConvert_SurfToAnaSurf_IsSame",
+             [](const Handle(Geom_Surface)& s1, const Handle(Geom_Surface)& s2, double tol) -> bool {
+    return occ_guard([&]{ return GeomConvert_SurfToAnaSurf::IsSame(s1, s2, tol); });
+  });
+  mod.method("GeomConvert_SurfToAnaSurf_IsCanonical", [](const Handle(Geom_Surface)& s) -> bool {
+    return occ_guard([&]{ return GeomConvert_SurfToAnaSurf::IsCanonical(s); });
+  });
+
+  // GeomConvert_CompCurveToBSplineCurve::Add takes a Handle(Geom_BoundedCurve)
+  // (curves with finite bounds -- BSpline/Bezier/Trimmed, never a raw
+  // infinite Geom_Line/Geom_Circle); Geom_BoundedCurve itself is never
+  // add_type'd, only DownCast'd to internally, since every curve already
+  // reaching Julia arrives as the more general Handle(Geom_Curve). Scoped to
+  // the default Convert_TgtThetaOver2 parameterisation -- the 8-value
+  // Convert_ParameterisationType enum isn't bound; a future round can widen
+  // this if a concrete need for the other parameterisations emerges.
+  mod.add_type<GeomConvert_CompCurveToBSplineCurve>("GeomConvert_CompCurveToBSplineCurve")
+     .constructor<>();
+  mod.method("Add", [](GeomConvert_CompCurveToBSplineCurve& c, const Handle(Geom_Curve)& curve,
+                        double tolerance, bool after, bool withRatio, int minM) -> bool {
+    Handle(Geom_BoundedCurve) bounded = Handle(Geom_BoundedCurve)::DownCast(curve);
+    return occ_guard([&]{ return c.Add(bounded, tolerance, after, withRatio, minM); });
+  });
+  mod.method("BSplineCurve", [](const GeomConvert_CompCurveToBSplineCurve& c) -> Handle(Geom_BSplineCurve) {
+    return c.BSplineCurve();
+  });
+  mod.method("Clear", [](GeomConvert_CompCurveToBSplineCurve& c) { c.Clear(); });
 }
