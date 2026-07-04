@@ -70,6 +70,7 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_dimtol.cpp
   src/occ_extrema2.cpp
   src/occ_fillet2d.cpp
+  src/occ_bopalgo_connected.cpp
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
