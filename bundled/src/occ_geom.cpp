@@ -290,7 +290,7 @@ void register_occ_geom(jlcxx::Module& mod) {
                                             int continuity, double tol3d) -> Handle(Geom_Curve) {
     TColgp_Array1OfPnt p = PolesFromFlat(points);
     GeomAPI_PointsToBSpline fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
-    return fitter.Curve();
+    return Handle(Geom_Curve)(fitter.Curve());
   });
 
   // ---- Surface fitting through a grid of points (2D analogue of the curve
@@ -301,7 +301,7 @@ void register_occ_geom(jlcxx::Module& mod) {
                 int continuity, double tol3d) -> Handle(Geom_Surface) {
     TColgp_Array2OfPnt p = PolesFromFlat2D(pointsFlat, nu, nv);
     GeomAPI_PointsToBSplineSurface fitter(p, degMin, degMax, GeomAbs_Shape(continuity), tol3d);
-    return fitter.Surface();
+    return Handle(Geom_Surface)(fitter.Surface());
   });
 
   // ---- Analytic offset curve/surface (Geom-level primitives, distinct from
@@ -326,7 +326,7 @@ void register_occ_geom(jlcxx::Module& mod) {
   // documented Exceptions, not just an IsDone()==false outcome.
   mod.method("Perform", [](GeomAPI_Interpolate& interp) { occ_guard([&]{ interp.Perform(); return 0; }); });
   mod.method("IsDone",  [](const GeomAPI_Interpolate& interp) -> bool { return bool(interp.IsDone()); });
-  mod.method("Curve",   [](const GeomAPI_Interpolate& interp) -> Handle(Geom_Curve) { return interp.Curve(); });
+  mod.method("Curve",   [](const GeomAPI_Interpolate& interp) -> Handle(Geom_Curve) { return Handle(Geom_Curve)(interp.Curve()); });
 
   // ---- Point projection ----
   mod.add_type<GeomAPI_ProjectPointOnCurve>("GeomAPI_ProjectPointOnCurve")

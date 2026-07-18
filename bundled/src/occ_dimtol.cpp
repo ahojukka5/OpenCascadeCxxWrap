@@ -50,7 +50,7 @@
 #include <jlcxx/jlcxx.hpp>
 
 #include <TCollection_HAsciiString.hxx>
-#include <NCollection_HArray1.hxx>
+#include <TColStd_HArray1OfReal.hxx>
 #include <NCollection_Sequence.hxx>
 #include <NCollection_DataMap.hxx>
 #include <XCAFDimTolObjects_Tool.hxx>
@@ -67,7 +67,7 @@
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Edge.hxx>
 
-using HArray1OfReal = NCollection_HArray1<double>;
+using HArray1OfReal = TColStd_HArray1OfReal;
 
 void register_occ_dimtol(jlcxx::Module& mod) {
   // TCollection_HAsciiString itself is add_type'd + given its NewHAsciiString/ToCString

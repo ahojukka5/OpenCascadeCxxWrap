@@ -117,10 +117,10 @@ void register_occ_geomconvert(jlcxx::Module& mod)
   // (Geom_Surface)-typed signature, such as GeomConvert_CurveToAnaCurve's
   // constructor below.
   mod.method("Geom_BSplineCurve_AsCurve", [](const Handle(Geom_BSplineCurve)& c) -> Handle(Geom_Curve) {
-    return c;
+    return Handle(Geom_Curve)(c);
   });
   mod.method("Geom_BSplineSurface_AsSurface", [](const Handle(Geom_BSplineSurface)& s) -> Handle(Geom_Surface) {
-    return s;
+    return Handle(Geom_Surface)(s);
   });
 
   // A raw Geom_Surface/Geom_Curve pulled off a Face/Edge via BRep_Tool

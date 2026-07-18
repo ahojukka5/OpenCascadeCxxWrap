@@ -55,35 +55,35 @@ void register_occ_geom2d(jlcxx::Module& mod) {
 
   mod.add_type<GCE2d_MakeSegment>("GCE2d_MakeSegment")
      .constructor<const gp_Pnt2d&, const gp_Pnt2d&>();
-  mod.method("Value2d", [](GCE2d_MakeSegment& m) -> Handle(Geom2d_Curve) { return m.Value(); });
+  mod.method("Value2d", [](GCE2d_MakeSegment& m) -> Handle(Geom2d_Curve) { return Handle(Geom2d_Curve)(m.Value()); });
   mod.method("IsDone2d", [](const GCE2d_MakeSegment& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<GCE2d_MakeArcOfCircle>("GCE2d_MakeArcOfCircle")
      .constructor<const gp_Circ2d&, double, double, bool>()
      .constructor<const gp_Pnt2d&, const gp_Pnt2d&, const gp_Pnt2d>();
-  mod.method("Value2d", [](GCE2d_MakeArcOfCircle& m) -> Handle(Geom2d_Curve) { return m.Value(); });
+  mod.method("Value2d", [](GCE2d_MakeArcOfCircle& m) -> Handle(Geom2d_Curve) { return Handle(Geom2d_Curve)(m.Value()); });
   mod.method("IsDone2d", [](const GCE2d_MakeArcOfCircle& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<GCE2d_MakeCircle>("GCE2d_MakeCircle")
      .constructor<const gp_Ax2d&, double>()
      .constructor<const gp_Circ2d&>();
-  mod.method("Value2d", [](GCE2d_MakeCircle& m) -> Handle(Geom2d_Curve) { return m.Value(); });
+  mod.method("Value2d", [](GCE2d_MakeCircle& m) -> Handle(Geom2d_Curve) { return Handle(Geom2d_Curve)(m.Value()); });
   mod.method("IsDone2d", [](const GCE2d_MakeCircle& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<GC_MakeSegment>("GC_MakeSegment")
      .constructor<const gp_Pnt&, const gp_Pnt&>();
-  mod.method("Value", [](GC_MakeSegment& m) -> Handle(Geom_Curve) { return m.Value(); });
+  mod.method("Value", [](GC_MakeSegment& m) -> Handle(Geom_Curve) { return Handle(Geom_Curve)(m.Value()); });
   mod.method("IsDone", [](const GC_MakeSegment& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<GC_MakeArcOfCircle>("GC_MakeArcOfCircle")
      .constructor<const gp_Circ&, double, double, bool>()
      .constructor<const gp_Pnt&, const gp_Pnt&, const gp_Pnt&>();
-  mod.method("Value", [](GC_MakeArcOfCircle& m) -> Handle(Geom_Curve) { return m.Value(); });
+  mod.method("Value", [](GC_MakeArcOfCircle& m) -> Handle(Geom_Curve) { return Handle(Geom_Curve)(m.Value()); });
   mod.method("IsDone", [](const GC_MakeArcOfCircle& m) -> bool { return bool(m.IsDone()); });
 
   mod.add_type<GC_MakeCircle>("GC_MakeCircle")
      .constructor<const gp_Ax2&, double>()
      .constructor<const gp_Circ&>();
-  mod.method("Value", [](GC_MakeCircle& m) -> Handle(Geom_Curve) { return m.Value(); });
+  mod.method("Value", [](GC_MakeCircle& m) -> Handle(Geom_Curve) { return Handle(Geom_Curve)(m.Value()); });
   mod.method("IsDone", [](const GC_MakeCircle& m) -> bool { return bool(m.IsDone()); });
 }

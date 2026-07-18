@@ -73,7 +73,7 @@ void register_occ_geomfill(jlcxx::Module& mod)
     return occ_guard([&]() -> Handle(Geom_Surface) {
       GeomFill_BSplineCurves fill(RequireBSplineCurve(c1), RequireBSplineCurve(c2),
                                    GeomFill_FillingStyle(style));
-      return fill.Surface();
+      return Handle(Geom_Surface)(fill.Surface());
     });
   });
   mod.method("GeomFill_BSplineCurves", [](const Handle(Geom_Curve)& c1, const Handle(Geom_Curve)& c2,
@@ -81,7 +81,7 @@ void register_occ_geomfill(jlcxx::Module& mod)
     return occ_guard([&]() -> Handle(Geom_Surface) {
       GeomFill_BSplineCurves fill(RequireBSplineCurve(c1), RequireBSplineCurve(c2),
                                    RequireBSplineCurve(c3), GeomFill_FillingStyle(style));
-      return fill.Surface();
+      return Handle(Geom_Surface)(fill.Surface());
     });
   });
   mod.method("GeomFill_BSplineCurves", [](const Handle(Geom_Curve)& c1, const Handle(Geom_Curve)& c2,
@@ -91,7 +91,7 @@ void register_occ_geomfill(jlcxx::Module& mod)
       GeomFill_BSplineCurves fill(RequireBSplineCurve(c1), RequireBSplineCurve(c2),
                                    RequireBSplineCurve(c3), RequireBSplineCurve(c4),
                                    GeomFill_FillingStyle(style));
-      return fill.Surface();
+      return Handle(Geom_Surface)(fill.Surface());
     });
   });
 
@@ -124,7 +124,7 @@ void register_occ_geomfill(jlcxx::Module& mod)
   mod.method("GeomFill_Gordon_Status", [](const GeomFill_Gordon& g) -> int {
     return int(g.Status());
   });
-  mod.method("Surface", [](const GeomFill_Gordon& g) -> Handle(Geom_Surface) { return g.Surface(); });
+  mod.method("Surface", [](const GeomFill_Gordon& g) -> Handle(Geom_Surface) { return Handle(Geom_Surface)(g.Surface()); });
 
   mod.add_type<GeomFill_Pipe>("GeomFill_Pipe")
      .constructor<const Handle(Geom_Curve)&, double>()                                    // constant radius
