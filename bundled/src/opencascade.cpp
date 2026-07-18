@@ -35,7 +35,10 @@ void register_occ_history(jlcxx::Module&);
 void register_occ_bopalgo_analyzer(jlcxx::Module&);
 void register_occ_bopalgo_builder(jlcxx::Module&);
 void register_occ_feat_hole(jlcxx::Module&);
-void register_occ_helix(jlcxx::Module&);
+// register_occ_helix (HelixBRep_BuilderHelix) intentionally omitted on the
+// occt-7.9.3 branch -- that class doesn't exist in OCCT 7.9.3 at all.
+// Restore this declaration and its call below once master (OCCT 8.0.0)
+// support lands for both OCCT_jll and NGSolveNetgen.
 void register_occ_geom2d_int(jlcxx::Module&);
 void register_occ_xcaf_material(jlcxx::Module&);
 void register_occ_igescaf(jlcxx::Module&);
@@ -103,7 +106,6 @@ JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
   register_occ_bopalgo_analyzer(mod);
   register_occ_bopalgo_builder(mod);
   register_occ_feat_hole(mod);
-  register_occ_helix(mod);
   register_occ_geom2d_int(mod);
   register_occ_xcaf_material(mod);
   register_occ_igescaf(mod);

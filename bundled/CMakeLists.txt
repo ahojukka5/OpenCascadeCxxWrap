@@ -44,7 +44,9 @@ add_library(opencascade_cxxwrap SHARED
   src/occ_bopalgo_analyzer.cpp
   src/occ_bopalgo_builder.cpp
   src/occ_feat_hole.cpp
-  src/occ_helix.cpp
+  # src/occ_helix.cpp -- HelixBRep_BuilderHelix doesn't exist in OCCT 7.9.3
+  # at all; restore once master (OCCT 8.0.0) support lands for both
+  # OCCT_jll and NGSolveNetgen.
   src/occ_geom2d_int.cpp
   src/occ_xcaf_material.cpp
   src/occ_igescaf.cpp
