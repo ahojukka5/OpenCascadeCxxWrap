@@ -15,6 +15,8 @@
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Vertex.hxx>
 
+#include <stdexcept>
+
 void register_occ_analysis(jlcxx::Module& mod)
 {
     // ------------------------------------------------------------------ types
@@ -87,8 +89,16 @@ void register_occ_analysis(jlcxx::Module& mod)
     });
 
     mod.method("BRep_Tool_Curve", [](const TopoDS_Edge& e) -> Handle(Geom_Curve) {
-        double first, last;
-        return BRep_Tool::Curve(e, first, last);
+        return occ_guard([&]() -> Handle(Geom_Curve) {
+            double first, last;
+            Handle(Geom_Curve) curve = BRep_Tool::Curve(e, first, last);
+            if (curve.IsNull()) {
+                throw std::runtime_error(
+                    "BRep_Tool_Curve: edge has no attached 3D Geom_Curve; "
+                    "operations requiring a Geom_BSplineCurve cannot use it");
+            }
+            return curve;
+        });
     });
     mod.method("BRep_Tool_Surface", [](const TopoDS_Face& f) -> Handle(Geom_Surface) {
         return BRep_Tool::Surface(f);
