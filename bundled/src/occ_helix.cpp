@@ -157,8 +157,13 @@ public:
       points.SetValue(static_cast<int>(i + 1), samples[i]);
     }
 
+    // Higher-degree global fits can oscillate outside the sampled cylinder
+    // even when every source point lies exactly on it. A cubic C2 fit is the
+    // stable OCCT 7 equivalent here and keeps the radial envelope within the
+    // requested tolerance while retaining a smooth sweep-ready curve.
+    const int fit_degree = std::min(max_degree_, 3);
     GeomAPI_PointsToBSpline approximation(
-        points, 3, max_degree_, continuity_, tolerance_);
+        points, 3, fit_degree, continuity_, tolerance_);
     if (!approximation.IsDone()) {
       error_status_ = 1;
       return;
