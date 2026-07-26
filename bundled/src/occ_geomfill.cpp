@@ -90,7 +90,7 @@ namespace {
       }
       tolerance_ = tolerance;
       done_ = false;
-      status_ = 0;
+      status_ = 0; // ResultStatus::NotStarted
       surface_.Nullify();
     }
 
@@ -99,7 +99,7 @@ namespace {
       status_ = 0;
       surface_.Nullify();
       if (profiles_.size() < 2 || guides_.size() < 2) {
-        status_ = 1;
+        status_ = 2; // ResultStatus::InvalidInput
         return;
       }
 
@@ -127,7 +127,7 @@ namespace {
         c3 = OrientedFrom(profiles_.back(), c2->Value(c2->LastParameter()));
         c4 = OrientedFrom(guides_.front(), c3->Value(c3->LastParameter()));
         if (c4->Value(c4->LastParameter()).Distance(retry_start) > closure_tol) {
-          status_ = 2;
+          status_ = 5; // ResultStatus::OrderingFailed
           return;
         }
       }
@@ -138,7 +138,7 @@ namespace {
       GeomFill_BSplineCurves fill(c1, c2, c3, c4, GeomFill_StretchStyle);
       surface_ = fill.Surface();
       done_ = !surface_.IsNull();
-      if (!done_) status_ = 3;
+      status_ = done_ ? 1 : 18; // Done or ConstructionFailed
     }
 
     bool IsDone() const { return done_; }
