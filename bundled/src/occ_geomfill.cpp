@@ -22,9 +22,11 @@
 #include <GeomAbs_Shape.hxx>
 #include <GeomConvert.hxx>
 #include <NCollection_Array1.hxx>
+#include <Standard_Failure.hxx>
 #include <gp_Pnt.hxx>
 
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #if defined(__has_include)
@@ -51,13 +53,24 @@ namespace {
   // and trimmed curves instead of requiring callers to pre-build BSplines.
   Handle(Geom_BSplineCurve) ToBSplineCurve(const Handle(Geom_Curve)& c) {
     if (c.IsNull()) {
-      throw std::runtime_error("fill_curves: received a null curve");
+      throw std::runtime_error("fill_curves: received a null curve; expected a Geom_BSplineCurve-compatible curve");
     }
     Handle(Geom_BSplineCurve) bs = Handle(Geom_BSplineCurve)::DownCast(c);
     if (!bs.IsNull()) {
       return Handle(Geom_BSplineCurve)::DownCast(bs->Copy());
     }
-    return GeomConvert::CurveToBSplineCurve(c);
+    try {
+      Handle(Geom_BSplineCurve) converted = GeomConvert::CurveToBSplineCurve(c);
+      if (converted.IsNull()) {
+        throw std::runtime_error("conversion returned a null handle");
+      }
+      return converted;
+    } catch (const Standard_Failure& err) {
+      const char* detail = err.GetMessageString();
+      throw std::runtime_error(
+          std::string("fill_curves: curve cannot be converted to Geom_BSplineCurve")
+          + (detail != nullptr && detail[0] != '\0' ? std::string(": ") + detail : std::string()));
+    }
   }
 
   Handle(Geom_BSplineCurve) OrientedFrom(
