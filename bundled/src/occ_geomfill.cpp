@@ -5,7 +5,7 @@
 //
 // GeomFill_Gordon is available in OCCT 8. On OCCT 7.x the compatibility
 // adapter below preserves the same Julia-facing API for the common boundary
-// network case by constructing a Coons patch from the outer four curves.
+// network case by constructing a boundary patch from the outer four curves.
 #include "occ_handle_traits.hpp"
 #include "occ_exception.hpp"
 #include <jlcxx/jlcxx.hpp>
@@ -105,7 +105,7 @@ namespace {
 
       // The first/last profile and guide curves form the outer boundary of
       // a Gordon network. Internal network curves are an OCCT 8 enhancement;
-      // OCCT 7's best equivalent is the Coons patch through this boundary.
+      // OCCT 7's best equivalent is a four-boundary filling patch.
       Handle(Geom_BSplineCurve) c1 = ToBSplineCurve(profiles_.front());
       const gp_Pnt c1_start = c1->Value(c1->FirstParameter());
       const gp_Pnt c1_end = c1->Value(c1->LastParameter());
@@ -132,7 +132,10 @@ namespace {
         }
       }
 
-      GeomFill_BSplineCurves fill(c1, c2, c3, c4, GeomFill_CoonsStyle);
+      // CoonsStyle in OCCT 7 requires at least four poles in both directions
+      // and rejects straight-line boundaries (two poles). StretchStyle works
+      // for both low-degree rectangular networks and richer boundaries.
+      GeomFill_BSplineCurves fill(c1, c2, c3, c4, GeomFill_StretchStyle);
       surface_ = fill.Surface();
       done_ = !surface_.IsNull();
       if (!done_) status_ = 3;
