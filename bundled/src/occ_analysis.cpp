@@ -80,6 +80,7 @@ void register_occ_analysis(jlcxx::Module& mod)
 
     mod.method("BRep_Tool_Degenerated",   [](const TopoDS_Edge& e) { return bool(BRep_Tool::Degenerated(e)); });
     mod.method("BRep_Tool_SameParameter", [](const TopoDS_Edge& e) { return bool(BRep_Tool::SameParameter(e)); });
+    mod.method("BRep_Tool_SameRange",     [](const TopoDS_Edge& e) { return bool(BRep_Tool::SameRange(e)); });
 
     mod.method("BRep_Tool_FirstParameter", [](const TopoDS_Edge& e) {
         double first, last;
