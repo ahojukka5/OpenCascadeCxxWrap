@@ -1,0 +1,141 @@
+name: Qualified Julia Artifact
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: julia-artifact-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  MONGE_COMMIT: 35705d2bfd73679b4afe3acb0a2b3a88ea0d4106
+
+jobs:
+  qualify:
+    name: Build and qualify Julia artifact
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    outputs:
+      tree_hash: ${{ steps.candidate.outputs.tree_hash }}
+      archive_sha256: ${{ steps.candidate.outputs.archive_sha256 }}
+      release_tag: ${{ steps.candidate.outputs.release_tag }}
+      wrapper_commit: ${{ steps.candidate.outputs.wrapper_commit }}
+
+    steps:
+      - name: Checkout wrapper candidate
+        uses: actions/checkout@v4
+        with:
+          path: native/OpenCascadeCxxWrap
+
+      - name: Checkout qualified Monge contract
+        uses: actions/checkout@v4
+        with:
+          repository: ahojukka5/Monge.jl
+          ref: ${{ env.MONGE_COMMIT }}
+          path: Monge.jl
+
+      - name: Set up Julia
+        uses: julia-actions/setup-julia@v2
+        with:
+          version: '1.12'
+
+      - name: Build, test, and package candidate
+        id: candidate
+        continue-on-error: true
+        shell: bash
+        run: bash native/OpenCascadeCxxWrap/scripts/qualify-julia-artifact.sh
+
+      - name: Upload qualification diagnostics
+        if: steps.candidate.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualification-failure-diagnostics
+          path: |
+            Monge.jl/*.log
+            Monge.jl/Manifest.toml
+            Monge.jl/Project.toml
+            Monge.jl/Artifacts.toml
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Fail on qualification error
+        if: steps.candidate.outcome == 'failure'
+        run: exit 1
+
+      - name: Upload qualified release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: qualified-julia-artifact
+          path: |
+            Monge.jl/release-candidate/
+            Monge.jl/examples/hydraulic_manifold_block/artifacts/
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish immutable wrapper release
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: qualify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download qualified release candidate
+        uses: actions/download-artifact@v4
+        with:
+          name: qualified-julia-artifact
+          path: candidate
+
+      - name: Publish or verify content-addressed release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_TAG: ${{ needs.qualify.outputs.release_tag }}
+          TREE_HASH: ${{ needs.qualify.outputs.tree_hash }}
+          ARCHIVE_SHA256: ${{ needs.qualify.outputs.archive_sha256 }}
+          WRAPPER_COMMIT: ${{ needs.qualify.outputs.wrapper_commit }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="candidate/release-candidate/libopencascade_cxxwrap.tar.gz"
+          metadata="candidate/release-candidate/release-metadata.txt"
+          test -f "$archive"
+          test -f "$metadata"
+          echo "$ARCHIVE_SHA256  $archive" | sha256sum --check -
+
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            mkdir existing
+            gh release download "$RELEASE_TAG" \
+              --pattern libopencascade_cxxwrap.tar.gz \
+              --dir existing
+            echo "$ARCHIVE_SHA256  existing/libopencascade_cxxwrap.tar.gz" | \
+              sha256sum --check -
+            echo "verified existing immutable release $RELEASE_TAG"
+            exit 0
+          fi
+
+          cat > release-notes.md <<EOF
+          Qualified Julia 1.12 OpenCascade CxxWrap artifact.
+
+          - artifact tree: $TREE_HASH
+          - archive SHA-256: $ARCHIVE_SHA256
+          - wrapper commit: $WRAPPER_COMMIT
+          - Monge qualification commit: $MONGE_COMMIT
+          - platform: x86_64-linux-gnu
+
+          The release passed Monge's complete package suite and hydraulic-manifold
+          preview with face p-curve, helix, and Gordon bindings present.
+          EOF
+          gh release create "$RELEASE_TAG" \
+            "$archive#libopencascade_cxxwrap.tar.gz" \
+            "$metadata#release-metadata.txt" \
+            --title "$RELEASE_TAG" \
+            --notes-file release-notes.md
