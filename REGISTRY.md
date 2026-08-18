@@ -1,26 +1,27 @@
-# Registry layout (once packages are registered in General):
+# Registry layout (once packages are registered in General)
 
 ```
 OCCT_jll
-├── OpenCascadeCxxWrap_jll  →  OpenCascade.jl  (deps: OpenCascadeCxxWrap_jll, OCCT_jll, CxxWrap)
-└── NGSolveNetgen_jll        →  NetgenCxxWrap_jll  →  Netgen.jl
+├── OpenCascadeCxxWrap_jll  →  Monge.jl  (private; deps: OpenCascadeCxxWrap_jll, OCCT_jll, CxxWrap)
+└── NGSolveNetgen_jll        →  NetgenCxxWrap_jll
 ```
 
-OpenCascade.jl does **not** depend on Netgen.jl. Users compose at the BREP boundary.
+This repository is the public [`OpenCascadeCxxWrap`](https://github.com/ahojukka5/OpenCascadeCxxWrap)
+source and BinaryBuilder recipe. It is not a monorepo and does not contain
+`OpenCascade.jl/`. Monge.jl does **not** depend on the Netgen wrapper. Users
+compose at the BREP boundary.
 
-## Local monorepo
+## Local build
 
-| Package | Build |
-|---------|-------|
-| `OpenCascadeCxxWrap_jll` | `julia --project=OpenCascade.jl OpenCascade.jl/gen/build_local.jl` |
-| `NetgenCxxWrap_jll` | `julia --project=Netgen.jl Netgen.jl/gen/build_local.jl` |
-
-BinaryBuilder (when ready):
+The recipe is `build_tarballs.jl` at this repository root, not
+`OpenCascadeCxxWrap_jll/build_tarballs.jl`:
 
 ```julia
-julia OpenCascadeCxxWrap_jll/build_tarballs.jl --deploy=local
-julia NetgenCxxWrap_jll/build_tarballs.jl --deploy=local
+julia build_tarballs.jl --deploy=local
 ```
 
-After registration, point `OpenCascade.jl/Artifacts.toml` and `Netgen.jl/Artifacts.toml`
-at the published JLL versions instead of local `gen/build_local.jl` hashes.
+Until a Yggdrasil / General JLL exists,
+[`oodi-artifacts`](https://github.com/ahojukka5/oodi-artifacts) hosts the
+temporary `libopencascade_cxxwrap` release assets. After registration, point
+Monge.jl's `Artifacts.toml` at the published JLL version instead of a local or
+`oodi-artifacts` download.
