@@ -17,11 +17,11 @@
 
 #if defined(__has_include)
 #  if __has_include(<HelixBRep_BuilderHelix.hxx>)
-#    define MONGE_HAS_OCCT_HELIX_BUILDER 1
+#    define OCC_HAS_HELIX_BUILDER 1
 #  endif
 #endif
 
-#ifdef MONGE_HAS_OCCT_HELIX_BUILDER
+#ifdef OCC_HAS_HELIX_BUILDER
 
 #include <HelixBRep_BuilderHelix.hxx>
 using HelixBuilderAdapter = HelixBRep_BuilderHelix;

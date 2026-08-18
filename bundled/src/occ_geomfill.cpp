@@ -31,11 +31,11 @@
 
 #if defined(__has_include)
 #  if __has_include(<GeomFill_Gordon.hxx>)
-#    define MONGE_HAS_GEOMFILL_GORDON 1
+#    define OCC_HAS_GEOMFILL_GORDON 1
 #  endif
 #endif
 
-#ifdef MONGE_HAS_GEOMFILL_GORDON
+#ifdef OCC_HAS_GEOMFILL_GORDON
 #include <GeomFill_Gordon.hxx>
 #endif
 
@@ -85,7 +85,7 @@ namespace {
     return bs;
   }
 
-#ifdef MONGE_HAS_GEOMFILL_GORDON
+#ifdef OCC_HAS_GEOMFILL_GORDON
   using GordonAdapter = GeomFill_Gordon;
 #else
   class GordonAdapter {
