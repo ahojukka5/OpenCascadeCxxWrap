@@ -30,7 +30,7 @@ OCC internally — that is unrelated to this Julia wrapper split.
 
 ## Dependencies
 
-- `OCCT_jll`
+- `OCCT_jll` 7.9.3
 - `libcxxwrap_julia_jll`
 - **No** `NGSolveNetgen_jll`
 
