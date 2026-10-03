@@ -43,7 +43,7 @@ jobs:
       - name: Set up Julia
         uses: julia-actions/setup-julia@v2
         with:
-          version: '1.12'
+          version: '1'
 
       - name: Build, test, and package candidate
         id: candidate
@@ -122,7 +122,7 @@ jobs:
           fi
 
           cat > release-notes.md <<EOF
-          Qualified Julia 1.12 OpenCascade CxxWrap artifact.
+          Qualified Julia $(julia --startup-file=no -e 'print(VERSION)') OpenCascade CxxWrap artifact.
 
           - artifact tree: $TREE_HASH
           - archive SHA-256: $ARCHIVE_SHA256
