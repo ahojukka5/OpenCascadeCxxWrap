@@ -14,7 +14,8 @@ replaced. The production recipe still selects OCCT_jll 7.9.3.
 - macOS native tree: `04d2d2f805e3e6931e6f02670cc1309f180e5d55`;
   archive SHA-256
   `17f2ddb18db38dc94c1e0cafcdee1567b8c837d405c4118265e0aaca666037c0`.
-- CxxWrap 0.17.5; libcxxwrap_julia_jll 0.14.12+0.
+- CxxWrap 0.17.5, commit `858d87ce47eb82b5306ab76d6aad77f0e241e574`;
+  libcxxwrap_julia_jll 0.14.12+0.
   Their source trees are `f7a997d3959648a818c45dda059a45844300b94d` and
   `2eecfd1759a176424159c1993b66f012a230319f`, respectively.
 - macOS 27.0.1 (26A434), ARM64, Apple Clang 21.0.0
@@ -65,6 +66,57 @@ The capability probe returned true, and all 936 consumer binding tests plus
 linkage listed only 7.9 OCCT sonames. A process-local artifact-directory
 selection kept it separate from every published archive and depot override.
 
+## Fresh local Linux x86_64/glibc results
+
+The existing local Docker toolchain images executed through QEMU on the
+ARM host. Linux kernel 6.8.0, Debian glibc 2.41, GNU C++ 14.2.0 and
+CMake 3.31.6 were used. Each ABI compiled all existing C++ translation units
+from clean
+wrapper commit `40f451aae93a98a2d141887067314455f932357a` against the
+Pkg-resolved native tree `9ad71dc7bc24252016d89611722806a84a9c100b`.
+The native archive SHA-256 is
+`27447b3eaa9c16e568651e479c02f466db7957a32c5c3e3122b302232af63762`.
+
+| Julia | libcxxwrap artifact tree | OCCT NEEDED | OCCT loaded | CAD checks | Separate 7.9 checks |
+| --- | --- | --- | --- | --- | --- |
+| 1.11.9 | `6975fda2bf1f433598c43db7e6c568c3c3b47219` | 29 | 48 | 19/19 | 9/9 |
+| 1.12.7 | `c257905bb27ce365e187bec4b4085a387f8c8dc6` | 29 | 48 | 19/19 | 9/9 |
+| 1.13.2 | `2c8e3286c36e49cd2f2e4883844266a265341857` | 29 | 48 | 19/19 | 9/9 |
+
+Pkg verified the native tree in each case. `readelf -d` confirmed the
+selected Julia minor, libcxxwrap linkage and OCCT artifact RUNPATH. GNU
+as-needed linkage retained 29 OCCT 8.0.1 dependencies; the runtime opened
+and audited all 48 toolkits. Every actual OCCT path came from
+`/depot/artifacts/9ad71dc7bc24252016d89611722806a84a9c100b/lib`; the wrappers
+were `/work/<minor>/lib/libopencascade_cxxwrap.so`. Actual CxxWrap paths
+matched the selected artifact above. No 7.9 toolkit appeared in an OCCT 8
+process. Each wrapper also passed an eager `RTLD_NOW | RTLD_GLOBAL`
+relocation check. The existing consumer runtime tests initialized the
+CxxWrap module,
+computed box volume 6 and valid Boolean volume 5.25, preserved volume on
+STEP import/export, and checked the explicit glTF limitation. Each
+separate OCCT 7.9.3 process passed its nine geometry/loading checks.
+
+All listed Linux passes used the default compiler and disabled compiled
+modules for the OCCT 8 process. An additional Julia 1.12.7 `--compile=min`
+run passed the same 19 checks and path audit in 183.53 seconds. The raw
+standalone smoke was executed on all four Mac ABIs; Linux used the existing
+consumer's runtime test for the Julia-to-C++ operations.
+
+Julia 1.10.12 could not start in the local QEMU environment. The untouched
+`julia:1.10` image also faulted in `jl_read_reloclist` before
+`println(VERSION)`, with zero Julia allocations. Its immutable image is
+`julia@sha256:db3f10ebc50b56c531c07b72f2f7562842169170d83e30aab2d0656b3a52e22e`.
+Generic CPU settings did not correct the startup fault. That local case has
+no wrapper or CAD result. Native Linux execution or a corrected Julia/QEMU
+startup is needed before qualifying it here. The historical native Linux
+results on the earlier page retain their separate source identities.
+
+No older glibc runtime was executed in this session. One initial Julia 1.12
+CMake query returned an empty Julia library path; the selected Julia's
+direct Libdl query and a clean configure/build retry succeeded. No C++
+compatibility fallback or native archive change was introduced.
+
 ## Reproduction
 
 Use a throwaway Julia project with CxxWrap 0.17.5. Keep the shared depot,
@@ -76,9 +128,12 @@ cache directory before invoking Julia; no artifact override is required.
 CASE="$HOME/.cache/oodi/OpenCascadeCxxWrap/occt8-qualification"
 mkdir -p "$CASE/env" "$CASE/tmp" "$CASE/build"
 export TMPDIR="$CASE/tmp" JULIA_PKG_PRECOMPILE_AUTO=0
+# On macOS, match the qualified wrapper deployment target.
+export MACOSX_DEPLOYMENT_TARGET=11.0
 julia +1.12.6 --startup-file=no --project="$CASE/env" -e '
 using Pkg
-Pkg.add(PackageSpec(name="CxxWrap", version="0.17.5"))'
+Pkg.add([PackageSpec(name="CxxWrap", version="0.17.5"),
+         PackageSpec(name="libcxxwrap_julia_jll", version="0.14.12+0")])'
 
 # Pass the catalogue and wrapper checkout explicitly. Their revisions must
 # match Inputs; do not assume a neighbouring checkout or search-path OCCT.
