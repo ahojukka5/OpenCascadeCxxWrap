@@ -52,7 +52,8 @@ does not replace the 7.9.3 release.
 
 `scripts/occt8_smoke.jl` loads the built library through CxxWrap and runs a
 box, a volume, a Boolean, a validity check, and a STEP round trip. A
-successful `dlopen` is not the result.
+successful `dlopen` is not the result. Native Linux x86_64/glibc and macOS
+ARM64 results are in [docs/occt-8.0.1.md](docs/occt-8.0.1.md).
 
 ## Local build
 
