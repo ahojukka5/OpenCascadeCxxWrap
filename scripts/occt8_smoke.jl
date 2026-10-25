@@ -14,6 +14,19 @@ const wrapper = abspath(ARGS[2])
 isdir(prefix) || error("OCCT prefix does not exist: $prefix")
 isfile(wrapper) || error("wrapper library does not exist: $wrapper")
 
+# Refuse a mixed process before opening any OCCT 8 toolkit or executing C++.
+# Checking only after the geometry operations is too late for incompatible ABIs.
+const occt_jll = Base.PkgId(Base.UUID("baad4e97-8daa-5946-aac2-2edac59d34e1"), "OCCT_jll")
+haskey(Base.loaded_modules, occt_jll) && error(
+    "OCCT_jll is already loaded; run the OCCT 8 smoke in a fresh Julia process",
+)
+const existing_occt = filter(path -> occursin(r"^libTK", basename(path)), Libdl.dllist())
+for path in existing_occt
+    realpath(dirname(path)) == realpath(joinpath(prefix, "lib")) || error(
+        "OCCT toolkit is already loaded outside the selected OCCT 8 prefix: $path",
+    )
+end
+
 const version_header = joinpath(prefix, "include", "opencascade", "Standard_Version.hxx")
 isfile(version_header) || error("missing OCCT version header: $version_header")
 occursin("#define OCC_VERSION_COMPLETE \"8.0.1\"", read(version_header, String)) ||
@@ -104,6 +117,8 @@ occursin(wrapper, first(wrapper_hits)) || error("loaded wrapper is $(first(wrapp
 cxx = filter(path -> occursin("libcxxwrap_julia", path), loaded)
 isempty(cxx) && error("libcxxwrap_julia was not loaded")
 length(unique(dirname.(cxx))) == 1 || error("multiple libcxxwrap_julia libraries are loaded: $cxx")
+all(path -> realpath(dirname(path)) == realpath(joinpath(CxxWrap.prefix_path(), "lib")), cxx) ||
+    error("loaded libcxxwrap_julia does not match CxxWrap.prefix_path(): $cxx")
 
 println("OCCT 8.0.1 Julia smoke PASS")
 println("version ", OCCTSmoke.OCCT_VersionComplete())
@@ -113,3 +128,7 @@ println("step_volume ", imported_volume)
 println("toolkits ", length(unique(basename.(occt8))))
 println("wrapper ", first(wrapper_hits))
 println("gltf_bound ", OCCTSmoke.OCCT_RWGltfCafWriterBound())
+println("cxxwrap_prefix ", CxxWrap.prefix_path())
+for path in sort!(vcat(occt8, cxx))
+    println("loaded_library ", path)
+end
