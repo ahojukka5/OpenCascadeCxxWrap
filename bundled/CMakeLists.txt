@@ -9,6 +9,30 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(JlCxx CONFIG REQUIRED)
 find_package(OpenCASCADE REQUIRED)
 
+# RWGltf_CafWriter is part of OCCT's optional RapidJSON/glTF toolkit.
+# OCCT 7.9.3 installs the header, including builds whose runtime writer
+# fails closed because RapidJSON itself is absent. The published OCCT
+# 8.0.1 archives disable RapidJSON and do not install the header.
+# Decide from the configured prefix only. A header found on the compiler's
+# default search path must not turn the binding back on.
+set(OPENCASCADE_CXXWRAP_RWGLTF_HEADER
+  "${OpenCASCADE_INCLUDE_DIR}/RWGltf_CafWriter.hxx")
+if(EXISTS "${OPENCASCADE_CXXWRAP_RWGLTF_HEADER}")
+  set(OPENCASCADE_CXXWRAP_HAS_RWGLTF ON)
+  message(STATUS "OCCT RWGltf_CafWriter: ${OPENCASCADE_CXXWRAP_RWGLTF_HEADER}")
+else()
+  set(OPENCASCADE_CXXWRAP_HAS_RWGLTF OFF)
+  message(STATUS
+    "OCCT RWGltf_CafWriter: header not installed; the binding stays unloaded")
+endif()
+
+# Off in the BinaryBuilder recipe so a 7.9.3 package build does not embed
+# a host prefix. Local OCCT 8.0.1 builds turn it on and then check the
+# loader path.
+option(OPENCASCADE_CXXWRAP_RECORD_OCCT_RPATH
+  "Embed OpenCASCADE_LIBRARY_DIR as an RPATH on libopencascade_cxxwrap"
+  OFF)
+
 add_library(opencascade_cxxwrap SHARED
   src/opencascade.cpp
   src/occ_gp.cpp
@@ -76,6 +100,11 @@ add_library(opencascade_cxxwrap SHARED
 )
 target_compile_features(opencascade_cxxwrap PRIVATE cxx_std_17)
 
+if(OPENCASCADE_CXXWRAP_HAS_RWGLTF)
+  target_compile_definitions(opencascade_cxxwrap PRIVATE
+    OPENCASCADE_CXXWRAP_HAS_RWGLTF=1)
+endif()
+
 target_include_directories(opencascade_cxxwrap PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src
   ${OpenCASCADE_INCLUDE_DIR}
@@ -89,6 +118,16 @@ target_link_libraries(opencascade_cxxwrap PRIVATE
 set_target_properties(opencascade_cxxwrap PROPERTIES
   CXX_VISIBILITY_PRESET default
   VISIBILITY_INLINES_HIDDEN OFF)
+
+if(OPENCASCADE_CXXWRAP_RECORD_OCCT_RPATH)
+  if(NOT OpenCASCADE_LIBRARY_DIR)
+    message(FATAL_ERROR
+      "OPENCASCADE_CXXWRAP_RECORD_OCCT_RPATH requires OpenCASCADE_LIBRARY_DIR")
+  endif()
+  set_target_properties(opencascade_cxxwrap PROPERTIES
+    BUILD_RPATH "${OpenCASCADE_LIBRARY_DIR}"
+    INSTALL_RPATH "${OpenCASCADE_LIBRARY_DIR}")
+endif()
 
 install(TARGETS opencascade_cxxwrap
   LIBRARY DESTINATION lib

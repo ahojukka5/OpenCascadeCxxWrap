@@ -7,8 +7,18 @@
 // through), operating on whatever triangulation is already attached to the
 // shapes (BRepMesh_IncrementalMesh must be run first -- this binding does
 // not mesh implicitly, matching RWGltf_CafWriter's own documented contract).
-#include "occ_handle_traits.hpp"
+//
+// CMake defines OPENCASCADE_CXXWRAP_HAS_RWGLTF only when the configured
+// OCCT prefix installs RWGltf_CafWriter.hxx. OCCT 7.9.3 does, and this file
+// keeps that writer. The published OCCT 8.0.1 archives build without
+// RapidJSON, so they omit the header and the toolkit. This translation unit
+// still compiles there and reports the writer as unbound. It does not
+// invent a replacement exporter.
 #include <jlcxx/jlcxx.hpp>
+
+#if defined(OPENCASCADE_CXXWRAP_HAS_RWGLTF)
+
+#include "occ_handle_traits.hpp"
 
 #include <RWGltf_CafWriter.hxx>
 #include <TDocStd_Document.hxx>
@@ -17,6 +27,8 @@
 #include <Message_ProgressRange.hxx>
 
 void register_occ_gltf(jlcxx::Module& mod) {
+  mod.method("OCCT_RWGltfCafWriterBound", []() { return true; });
+
   mod.add_type<RWGltf_CafWriter>("RWGltf_CafWriter")
      .constructor([](const std::string& file, bool isBinary) -> RWGltf_CafWriter* {
        return new RWGltf_CafWriter(TCollection_AsciiString(file.c_str()), isBinary);
@@ -28,3 +40,11 @@ void register_occ_gltf(jlcxx::Module& mod) {
     return bool(w.Perform(doc, fileInfo, progress));
   });
 }
+
+#else
+
+void register_occ_gltf(jlcxx::Module& mod) {
+  mod.method("OCCT_RWGltfCafWriterBound", []() { return false; });
+}
+
+#endif

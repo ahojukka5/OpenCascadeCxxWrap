@@ -12,13 +12,13 @@
 // error. OCCT 8.0.0 changed Standard_Failure to derive from std::exception
 // directly (dropping Standard_Transient/RTTI entirely, per its own header
 // comment) -- this guard still needs to work for a build against either
-// version, so it avoids both what() (absent in 7.9.3) and DynamicType()
-// (absent in 8.0.0, since Standard_Failure is no longer Standard_Transient
-// there), using only APIs present in both: GetMessageString() (the
-// original, non-deprecated name in 7.9.3, a deprecated-but-functional
-// alias for what() in 8.0.0) and, in the rare "no message" fallback case,
-// the standard (compiler-mangled, not OCCT's own pretty type name)
-// typeid(e).name() rather than any OCCT-specific RTTI.
+// version, so it avoids DynamicType() (absent in 8.0.0, since
+// Standard_Failure is no longer Standard_Transient there). The message
+// accessor is selected by OCC_VERSION_HEX: GetMessageString() is the
+// 7.9.3 name, and what() is the 8.0 name. GetMessageString() remains in
+// 8.0 only as a deprecated alias, so an 8.0 build does not call it.
+// A missing message falls back to typeid(e).name(), which is the
+// compiler-mangled name rather than OCCT's own type name.
 //
 // Wrap any OCCT call that can throw on malformed/degenerate input:
 //   mod.method("Foo", [](T& obj, double x) {
@@ -27,6 +27,7 @@
 #pragma once
 
 #include <Standard_Failure.hxx>
+#include <Standard_Version.hxx>
 #include <stdexcept>
 #include <string>
 #include <typeinfo>
@@ -36,7 +37,11 @@ auto occ_guard(F&& f) -> decltype(f()) {
   try {
     return f();
   } catch (const Standard_Failure& e) {
+#if OCC_VERSION_HEX >= 0x080000
+    const char* msg = e.what();
+#else
     const char* msg = e.GetMessageString();
+#endif
     std::string what = (msg && *msg) ? std::string(msg) : std::string(typeid(e).name());
     throw std::runtime_error(what);
   }
