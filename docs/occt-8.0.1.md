@@ -5,6 +5,10 @@ local build of the existing bindings against the published OodiArtifacts
 `occt_8_0_1` archives. It is not a JLL, a registry change, or a replacement
 of the 7.9.3 releases.
 
+Fresh local builds and stronger smoke-process isolation are recorded in
+[current-source qualification](occt-8.0.1-local-qualification.md). The
+source-pinned historical Linux evidence below remains separate.
+
 ## Revisions
 
 | Item | Value |
