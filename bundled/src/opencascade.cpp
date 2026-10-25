@@ -2,6 +2,10 @@
 // Each register_* function is defined in its own translation unit.
 #include <jlcxx/jlcxx.hpp>
 
+#include <Standard_Version.hxx>
+
+#include <string>
+
 void register_occ_toptools_list(jlcxx::Module&);
 void register_occ_gp(jlcxx::Module&);
 void register_occ_topology(jlcxx::Module&);
@@ -67,6 +71,12 @@ void register_occ_ply(jlcxx::Module&);
 
 JLCXX_MODULE define_julia_module(jlcxx::Module& mod)
 {
+  // Header version of the OCCT this library was compiled against.
+  // The loaded toolkit filenames are the runtime identity.
+  mod.method("OCCT_VersionComplete", []() -> std::string {
+    return std::string(OCC_VERSION_COMPLETE);
+  });
+
   register_occ_gp(mod);
   register_occ_topology(mod);
   register_occ_toptools_list(mod);
